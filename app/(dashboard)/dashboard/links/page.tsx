@@ -17,12 +17,9 @@ import {
   FiClock,
   FiEye,
   FiZap,
-  FiFilter,
-  FiDownload,
-  FiShare2
+  FiFilter
 } from 'react-icons/fi'
-import { motion, AnimatePresence } from 'framer-motion'
-import { PageWrapper, AnimatedCard, itemVariants, buttonVariants } from '@/components/ui/animations'
+import { motion, AnimatePresence, Variants } from 'framer-motion'
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
 
@@ -34,7 +31,6 @@ export default function LinksPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>('newest')
-  const [selectedLinks, setSelectedLinks] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
@@ -52,7 +48,6 @@ export default function LinksPage() {
   useEffect(() => {
     let filtered = [...links]
     
-    // Apply search
     if (searchTerm) {
       filtered = filtered.filter(link => 
         link.short_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,7 +55,6 @@ export default function LinksPage() {
       )
     }
     
-    // Apply sort
     filtered.sort((a, b) => {
       if (sortBy === 'newest') {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -121,6 +115,24 @@ export default function LinksPage() {
   const averageClicks = links.length ? (totalClicks / links.length).toFixed(1) : 0
   const topLink = links.length ? Math.max(...links.map(l => l.clicks_count || 0)) : 0
 
+  const pageVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  }
+
+  const itemVariants: Variants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1
+    }
+  }
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
@@ -134,7 +146,12 @@ export default function LinksPage() {
   }
 
   return (
-    <PageWrapper>
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Header with Stats */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8 text-white">
         <div className="absolute inset-0">
@@ -159,7 +176,6 @@ export default function LinksPage() {
             </Link>
           </div>
 
-          {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
               <p className="text-white/80 text-sm mb-1">Total Links</p>
@@ -190,7 +206,7 @@ export default function LinksPage() {
       </div>
 
       {/* Search and Filters */}
-      <AnimatedCard className="p-6">
+      <motion.div variants={itemVariants} className="glass-card p-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -205,9 +221,8 @@ export default function LinksPage() {
           
           <div className="flex gap-2">
             <motion.button
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setShowFilters(!showFilters)}
               className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300"
             >
@@ -246,11 +261,11 @@ export default function LinksPage() {
             </motion.div>
           )}
         </AnimatePresence>
-      </AnimatedCard>
+      </motion.div>
 
       {/* Links Grid/Table */}
       {filteredLinks.length === 0 ? (
-        <AnimatedCard className="p-16 text-center">
+        <motion.div variants={itemVariants} className="glass-card p-16 text-center">
           <motion.div
             animate={{ 
               scale: [1, 1.1, 1],
@@ -278,7 +293,7 @@ export default function LinksPage() {
               Create Your First Link
             </Link>
           )}
-        </AnimatedCard>
+        </motion.div>
       ) : (
         <div className="space-y-4">
           {filteredLinks.map((link, index) => (
@@ -286,7 +301,7 @@ export default function LinksPage() {
               key={link.id}
               variants={itemVariants}
               whileHover={{ scale: 1.02, x: 5 }}
-              className="relative overflow-hidden group"
+              className="group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
               
@@ -315,11 +330,6 @@ export default function LinksPage() {
                           <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
                             QR ready
                           </span>
-                          {link.expires_at && new Date(link.expires_at) < new Date() && (
-                            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
-                              Expired
-                            </span>
-                          )}
                         </div>
                         
                         <div className="flex items-center space-x-2 mt-1">
@@ -329,7 +339,6 @@ export default function LinksPage() {
                           <button
                             onClick={() => copyToClipboard(link.short_code)}
                             className="text-gray-400 hover:text-blue-600 transition-colors"
-                            title="Copy short URL"
                           >
                             <FiCopy className="w-4 h-4" />
                           </button>
@@ -338,18 +347,7 @@ export default function LinksPage() {
                         <div className="flex items-center space-x-3 mt-2 text-xs text-gray-400">
                           <span className="flex items-center">
                             <FiClock className="w-3 h-3 mr-1" />
-                            {new Date(link.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </span>
-                          <span></span>
-                          <span className="flex items-center">
-                            <FiEye className="w-3 h-3 mr-1" />
-                            Last click: {link.last_clicked_at 
-                              ? new Date(link.last_clicked_at).toLocaleDateString()
-                              : 'Never'}
+                            {new Date(link.created_at).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
@@ -358,52 +356,47 @@ export default function LinksPage() {
 
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-2 lg:space-x-3">
-                    <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <button
                         onClick={() => copyToClipboard(link.short_code)}
                         className="p-3 hover:bg-white rounded-xl transition-all group relative"
-                        title="Copy link"
                       >
                         <FiCopy className="w-5 h-5 text-gray-500 group-hover:text-blue-600" />
                       </button>
                     </motion.div>
 
-                    <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <Link
                         href={`/dashboard/qrcodes?link=${link.id}`}
                         className="p-3 hover:bg-white rounded-xl transition-all group relative"
-                        title="Generate QR code"
                       >
                         <FiCode className="w-5 h-5 text-gray-500 group-hover:text-purple-600" />
                       </Link>
                     </motion.div>
 
-                    <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <a
                         href={`/${link.short_code}`}
                         target="_blank"
                         className="p-3 hover:bg-white rounded-xl transition-all group relative"
-                        title="Open link"
                       >
                         <FiExternalLink className="w-5 h-5 text-gray-500 group-hover:text-green-600" />
                       </a>
                     </motion.div>
 
-                    <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <Link
                         href={`/dashboard/analytics?link=${link.id}`}
                         className="p-3 hover:bg-white rounded-xl transition-all group relative"
-                        title="View analytics"
                       >
                         <FiBarChart2 className="w-5 h-5 text-gray-500 group-hover:text-orange-600" />
                       </Link>
                     </motion.div>
 
-                    <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <button
                         onClick={() => deleteLink(link.id)}
                         className="p-3 hover:bg-white rounded-xl transition-all group relative"
-                        title="Delete link"
                       >
                         <FiTrash2 className="w-5 h-5 text-gray-500 group-hover:text-red-600" />
                       </button>
@@ -425,21 +418,6 @@ export default function LinksPage() {
           ))}
         </div>
       )}
-
-      {/* Floating Action Button for Mobile */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="fixed bottom-6 right-6 lg:hidden"
-      >
-        <Link
-          href="/dashboard/links/new"
-          className="flex items-center justify-center w-14 h-14 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full text-white shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <FiPlus className="w-6 h-6" />
-        </Link>
-      </motion.div>
-    </PageWrapper>
+    </motion.div>
   )
 }
