@@ -196,7 +196,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <MergedHeader stats={stats} userName={user?.name} />
+      <MergedHeader stats={stats} userName={user?.name ?? undefined} />
       <main className="pt-16 sm:pt-20">
         <div className="px-3 sm:px-4 lg:px-6 max-w-7xl mx-auto">
           <motion.div 
@@ -545,3 +545,4 @@ export default function DashboardPage() {
     </>
   )
 }
+
