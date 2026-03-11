@@ -116,17 +116,24 @@ export default function LinksPage() {
   const topLink = links.length ? Math.max(...links.map(l => l.clicks_count || 0)) : 0
 
   const pageVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      
-    visible: { 
-      y: 0, 
-      opacity: 1
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
     }
   }
+}
 
-  if (loading || isLoading) {
+const itemVariants: Variants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { 
+    y: 0, 
+    opacity: 1
+  }
+}
+
+if (loading || isLoading) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
         <motion.div
@@ -414,4 +421,5 @@ export default function LinksPage() {
     </motion.div>
   )
 }
+
 
