@@ -41,12 +41,14 @@ export default function DashboardPage() {
   const [recentLinks, setRecentLinks] = useState<any[]>([])
   const [hoveredStat, setHoveredStat] = useState<string | null>(null)
 
+  // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login')
     }
   }, [user, loading, router])
 
+  // Fetch dashboard data
   useEffect(() => {
     if (user) {
       fetchDashboardData()
@@ -75,33 +77,32 @@ export default function DashboardPage() {
       })
 
       setRecentLinks(linksData?.slice(0, 5) || [])
-
+      setIsLoading(false)
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-    } finally {
       setIsLoading(false)
     }
   }
 
   const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
     }
   }
-}
 
-const itemVariants: Variants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { 
-    y: 0, 
-    opacity: 1
-  }
-}
+  const itemVariants: Variants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1
+    }
   }
 
+  // Loading state
   if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
@@ -114,6 +115,7 @@ const itemVariants: Variants = {
     )
   }
 
+  // Not authenticated
   if (!user) {
     return null
   }
@@ -333,6 +335,7 @@ const itemVariants: Variants = {
                     </div>
                   </div>
 
+                  {/* Animated particles */}
                   <div className="absolute inset-0 pointer-events-none">
                     {[...Array(3)].map((_, i) => (
                       <motion.div
@@ -355,6 +358,7 @@ const itemVariants: Variants = {
                     ))}
                   </div>
 
+                  {/* Animated progress bar */}
                   <motion.div 
                     className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white to-transparent"
                     animate={{
@@ -502,6 +506,7 @@ const itemVariants: Variants = {
                 )}
               </div>
 
+              {/* Animated particles */}
               <div className="absolute inset-0 pointer-events-none">
                 {[...Array(5)].map((_, i) => (
                   <motion.div
@@ -524,6 +529,7 @@ const itemVariants: Variants = {
                 ))}
               </div>
 
+              {/* Animated progress bar */}
               <motion.div 
                 className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white to-transparent"
                 animate={{
@@ -542,6 +548,3 @@ const itemVariants: Variants = {
     </>
   )
 }
-
-
-
