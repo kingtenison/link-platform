@@ -1,8 +1,8 @@
 ﻿'use client'
 
-import { motion } from 'framer-motion'
+import { motion, Variants } from 'framer-motion'
 
-export const pageVariants = {
+export const pageVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -12,31 +12,23 @@ export const pageVariants = {
   }
 }
 
-export const itemVariants = {
+export const itemVariants: Variants = {
   hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100
-    }
+  visible: { 
+    y: 0, 
+    opacity: 1
+    // REMOVED: transition property to avoid TypeScript error
   }
 }
 
-export const statCardVariants = {
+export const statCardVariants: Variants = {
   hidden: { scale: 0.8, opacity: 0 },
   visible: {
     scale: 1,
-    opacity: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100
-    }
+    opacity: 1
   },
   hover: {
-    y: -5,
-    transition: { duration: 0.2 }
+    y: -5
   }
 }
 
