@@ -11,7 +11,7 @@ export async function GET(
     const { shortCode } = await params
     const searchParams = request.nextUrl.searchParams
     const password = searchParams.get('password')
-    
+
     console.log('>>> Redirect called for:', shortCode)
 
     if (!shortCode) {
@@ -55,7 +55,7 @@ export async function GET(
       }
 
       const isValid = await bcrypt.compare(password, link.password_hash)
-      
+
       if (!isValid) {
         console.log('>>> Invalid password for link')
         return new NextResponse(null, {
@@ -67,8 +67,8 @@ export async function GET(
       }
     }
 
-    // Determine if we should show an ad (every 2nd click)
-    const shouldShowAd = (link.clicks_count + 1) % 2 === 0
+    // Determine if we should show an ad (EVERY CLICK)
+    const shouldShowAd = true
 
     // Track the click
     try {
@@ -93,7 +93,7 @@ export async function GET(
     try {
       await supabase
         .from('links')
-        .update({ 
+        .update({
           clicks_count: (link.clicks_count || 0) + 1,
           last_clicked_at: new Date().toISOString()
         })
@@ -172,7 +172,7 @@ export async function GET(
             </script>
           </body>
         </html>`,
-        { 
+        {
           status: 200,
           headers: { 'Content-Type': 'text/html' }
         }
