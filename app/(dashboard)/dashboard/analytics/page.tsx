@@ -1,10 +1,10 @@
 ﻿'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
 import { 
   FiBarChart2, 
   FiTrendingUp, 
@@ -39,14 +39,15 @@ import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
 import { format, subDays, subMonths, eachDayOfInterval } from 'date-fns'
 
-export default function AnalyticsPage() {
+// Create a separate component for the analytics content that uses useSearchParams
+function AnalyticsContent() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [links, setLinks] = useState<any[]>([])
   const [clicks, setClicks] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('all') // Changed default to 'all'
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('all')
   const [selectedLink, setSelectedLink] = useState<string>('all')
   const [chartData, setChartData] = useState<any[]>([])
   const [deviceData, setDeviceData] = useState<any[]>([])
@@ -103,12 +104,10 @@ export default function AnalyticsPage() {
         .eq('user_id', user?.id)
         .order('clicked_at', { ascending: false })
 
-      // Filter by link if selected
       if (selectedLink !== 'all') {
         query = query.eq('link_id', selectedLink)
       }
 
-      // Filter by date range (if not 'all')
       if (dateRange !== 'all') {
         const now = new Date()
         let startDate
@@ -126,20 +125,11 @@ export default function AnalyticsPage() {
         query = query.gte('clicked_at', startDate.toISOString())
       }
 
-      console.log('>>> Fetching clicks for:', {
-        link: selectedLink,
-        dateRange,
-        userId: user?.id
-      })
-
       const { data: clicksData, error: clicksError } = await query
 
       if (clicksError) throw clicksError
       
-      console.log('>>> Found clicks:', clicksData?.length || 0)
       setClicks(clicksData || [])
-      
-      // Process data for charts
       processData(clicksData || [])
       
     } catch (error) {
@@ -151,7 +141,6 @@ export default function AnalyticsPage() {
   }
 
   const processData = (clicks: any[]) => {
-    // Process device data
     const devices = clicks.reduce((acc: any, click) => {
       const device = click.device_type || 'Unknown'
       acc[device] = (acc[device] || 0) + 1
@@ -159,7 +148,6 @@ export default function AnalyticsPage() {
     }, {})
     setDeviceData(Object.entries(devices).map(([name, value]) => ({ name, value })))
 
-    // Process location data
     const locations = clicks.reduce((acc: any, click) => {
       const country = click.country || 'Unknown'
       acc[country] = (acc[country] || 0) + 1
@@ -167,14 +155,12 @@ export default function AnalyticsPage() {
     }, {})
     setLocationData(Object.entries(locations).map(([name, value]) => ({ name, value })))
 
-    // Calculate stats
     setStats({
       totalClicks: clicks.length,
       uniqueVisitors: new Set(clicks.map(c => c.visitor_id)).size,
       avgClicksPerDay: clicks.length > 0 ? clicks.length / 30 : 0
     })
 
-    // Process chart data (group by date)
     const clicksByDate = clicks.reduce((acc: any, click) => {
       const date = format(new Date(click.clicked_at), 'MMM dd')
       acc[date] = (acc[date] || 0) + 1
@@ -185,7 +171,6 @@ export default function AnalyticsPage() {
       date,
       clicks
     })).sort((a, b) => {
-      // Sort by date
       return new Date(a.date).getTime() - new Date(b.date).getTime()
     })
 
@@ -375,44 +360,19 @@ export default function AnalyticsPage() {
           )}
         </AnimatedCard>
       </div>
-
-      {/* Recent Clicks */}
-      <AnimatedCard className="p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Recent Clicks</h2>
-        {clicks.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Link</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Location</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Device</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clicks.slice(0, 10).map((click) => (
-                  <tr key={click.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      {click.links?.short_code || 'N/A'}
-                    </td>
-                    <td className="py-3 px-4">{click.country || 'Unknown'}</td>
-                    <td className="py-3 px-4">{click.device_type || 'Unknown'}</td>
-                    <td className="py-3 px-4 text-sm text-gray-500">
-                      {format(new Date(click.clicked_at), 'MMM dd, yyyy HH:mm')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-12 text-gray-500">
-            No clicks recorded yet
-          </div>
-        )}
-      </AnimatedCard>
     </PageWrapper>
   )
 }
 
+// Main page component with Suspense
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    }>
+      <AnalyticsContent />
+    </Suspense>
+  )
+}
