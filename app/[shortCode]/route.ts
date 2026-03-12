@@ -67,7 +67,8 @@ export async function GET(
       }
     }
 
-    console.log('>>> Link found, redirecting to:', link.original_url)
+    // Determine if we should show an ad (every 2nd click)
+    const shouldShowAd = (link.clicks_count + 1) % 2 === 0
 
     // Track the click
     try {
@@ -81,7 +82,6 @@ export async function GET(
           referer: request.headers.get('referer') || 'direct',
           clicked_at: new Date().toISOString(),
           ip_address: request.headers.get('x-forwarded-for') || 'unknown',
-          // REMOVED: request.geo - not available in all environments
           success: true,
           visitor_id: `visitor_${Date.now()}`
         }])
@@ -102,7 +102,85 @@ export async function GET(
       console.error('>>> Error updating click count:', e)
     }
 
-    // Redirect to original URL
+    // Show ad page if needed
+    if (shouldShowAd) {
+      console.log('>>> Showing ad for link:', shortCode)
+      return new NextResponse(
+        `<!DOCTYPE html>
+        <html>
+          <head>
+            <title>Loading your link...</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              body { 
+                font-family: system-ui, -apple-system, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+                color: white;
+                text-align: center;
+              }
+              .container {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                padding: 2rem;
+                border-radius: 1rem;
+                max-width: 400px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              }
+              .loader {
+                border: 4px solid rgba(255,255,255,0.3);
+                border-top-color: white;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 20px auto;
+              }
+              @keyframes spin { to { transform: rotate(360deg); } }
+              .countdown { font-size: 2rem; font-weight: bold; margin: 1rem 0; }
+              .support { margin-top: 2rem; font-size: 0.875rem; opacity: 0.8; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h2>Preparing your link</h2>
+              <div class="loader"></div>
+              <p>You'll be redirected in <span id="countdown">5</span> seconds</p>
+              <p class="support">Thanks for supporting LinkPlatform!</p>
+            </div>
+            
+            <!-- Popunder Ad Code -->
+            <script src="https://pl28900365.effectivegatecpm.com/e0/04/20/e00420d152c910988ed3141d4d763572.js"></script>
+            
+            <script>
+              // Countdown timer
+              let seconds = 5;
+              const countdownEl = document.getElementById('countdown');
+              const interval = setInterval(() => {
+                seconds--;
+                countdownEl.textContent = seconds;
+                if (seconds <= 0) {
+                  clearInterval(interval);
+                  window.location.href = '${link.original_url}';
+                }
+              }, 1000);
+            </script>
+          </body>
+        </html>`,
+        { 
+          status: 200,
+          headers: { 'Content-Type': 'text/html' }
+        }
+      )
+    }
+
+    // Normal redirect without ad
+    console.log('>>> No ad, redirecting to:', link.original_url)
     return NextResponse.redirect(link.original_url, 302)
 
   } catch (error) {
