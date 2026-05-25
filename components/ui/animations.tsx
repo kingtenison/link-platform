@@ -43,7 +43,7 @@ export function PageWrapper({ children }: { children: React.ReactNode }) {
       variants={pageVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-14 sm:space-y-20 lg:space-y-24"
     >
       {children}
     </motion.div>
@@ -55,7 +55,7 @@ export function AnimatedCard({ children, className = '' }: { children: React.Rea
     <motion.div
       variants={itemVariants}
       whileHover={{ y: -5 }}
-      className={`glass-card ${className}`}
+      className={`glass-card p-8 ${className}`}
     >
       {children}
     </motion.div>

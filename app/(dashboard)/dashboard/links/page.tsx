@@ -20,6 +20,7 @@ import {
   FiFilter
 } from 'react-icons/fi'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
+import NativeBanner from '@/components/ads/NativeBanner'
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
 
@@ -146,12 +147,13 @@ if (loading || isLoading) {
   }
 
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-16 sm:pt-20">
+      <motion.div
+        variants={pageVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-12 sm:space-y-16 lg:space-y-20"
+      >
       {/* Header with Stats */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8 text-white">
         <div className="absolute inset-0">
@@ -261,7 +263,7 @@ if (loading || isLoading) {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </motion.div>`n`n      {/* Advertisement */}`n      <NativeBanner />
 
       {/* Links Grid/Table */}
       {filteredLinks.length === 0 ? (
@@ -419,8 +421,10 @@ if (loading || isLoading) {
         </div>
       )}
     </motion.div>
+    </div>
   )
 }
+
 
 
 

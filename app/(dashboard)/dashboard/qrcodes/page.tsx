@@ -140,7 +140,7 @@ export default function QRCodesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-16 sm:pt-20 space-y-12 sm:space-y-16 lg:space-y-20">
       {/* Header with Navigation */}
       <div className="glass-card p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

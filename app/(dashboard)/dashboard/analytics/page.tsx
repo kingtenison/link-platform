@@ -20,6 +20,7 @@ import {
 } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import { PageWrapper, AnimatedCard, itemVariants, buttonVariants } from '@/components/ui/animations'
+import NativeBanner from '@/components/ads/NativeBanner'
 import {
   LineChart,
   Line,
@@ -192,9 +193,10 @@ function AnalyticsContent() {
   }
 
   return (
-    <PageWrapper>
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8 text-white">
+    <div className="dashboard-container pt-16 sm:pt-20">
+      <PageWrapper>
+        {/* Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8 lg:p-10 text-white">
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -253,8 +255,8 @@ function AnalyticsContent() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <AnimatedCard className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <AnimatedCard className="p-8">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
               <FiMousePointer className="w-6 h-6 text-blue-600" />
@@ -289,9 +291,7 @@ function AnalyticsContent() {
           </div>
           <p className="text-gray-600 text-sm">Avg Clicks/Day</p>
         </AnimatedCard>
-      </div>
-
-      {/* Chart */}
+            </div>`n`n      {/* Advertisement */}`n      <NativeBanner />`n`n      {/* Chart */}
       <AnimatedCard className="p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Traffic Overview</h2>
         {chartData.length > 0 ? (
@@ -358,9 +358,10 @@ function AnalyticsContent() {
               No location data
             </div>
           )}
-        </AnimatedCard>
-      </div>
-    </PageWrapper>
+         </AnimatedCard>
+       </div>
+      </PageWrapper>
+    </div>
   )
 }
 

@@ -129,9 +129,9 @@ export default function Home() {
         }} />
       </div>
 
-      {/* Hero Section */}
-      <section className="relative z-10 container mx-auto px-4 py-20">
-        <div className="max-w-5xl mx-auto">
+      {/* Hero Section - full bleed bar, scaled content */}
+      <section className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28">
+        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -153,7 +153,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-6xl md:text-7xl font-bold mb-6"
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-8xl font-bold mb-6 leading-tight"
             >
               <span className="text-white">Shorten Links.</span>
               <br />
@@ -166,7 +166,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-xl text-white/80 mb-12 max-w-2xl mx-auto"
+              className="text-xl text-white/80 mb-12"
             >
               The most beautiful URL shortener with real-time analytics, QR codes, 
               and enterprise-grade security.
@@ -177,7 +177,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="max-w-2xl mx-auto"
+              className="w-full"
             >
               <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-2 flex flex-col sm:flex-row gap-2">
                 <input
@@ -224,19 +224,20 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="relative z-10 container mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
+      {/* Features Section - full bleed, scaled */}
+      <section className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28">
+        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Everything you need in one platform
           </h2>
-          <p className="text-xl text-white/60 max-w-2xl mx-auto">
+          <p className="text-xl text-white/60">
             Powerful features that help you grow and track your audience
           </p>
         </motion.div>
@@ -258,19 +259,21 @@ export default function Home() {
               <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
               <p className="text-white/60">{feature.desc}</p>
             </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="relative z-10 container mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: true }}
-          className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-center relative overflow-hidden"
-        >
+      {/* CTA Section - full bleed, scaled content */}
+      <section className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28">
+        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 lg:p-16 text-center relative overflow-hidden"
+          >
           <div className="absolute inset-0">
             <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -289,7 +292,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-xl text-white/80 mb-8 max-w-2xl mx-auto"
+              className="text-xl text-white/80 mb-8"
             >
               Join thousands of satisfied users and start shortening your links today.
             </motion.p>
@@ -317,8 +320,9 @@ export default function Home() {
                 </Link>
               )}
             </motion.div>
-          </div>
-        </motion.div>
+           </div>
+         </motion.div>
+        </div>
       </section>
     </main>
   )

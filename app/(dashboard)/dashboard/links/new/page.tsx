@@ -98,7 +98,7 @@ export default function NewLinkPage() {
 
   if (created) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="w-full">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -169,8 +169,8 @@ export default function NewLinkPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Link href="/dashboard/links" className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-6 group">
+    <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-16 sm:pt-20">
+      <Link href="/dashboard/links" className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-8 group">
         <FiArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
         Back to Links
       </Link>

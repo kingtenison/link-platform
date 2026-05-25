@@ -20,7 +20,7 @@ export default function RawDataPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-8 w-full">
       <h1 className="text-2xl font-bold mb-4">Raw Click Data</h1>
       
       <button

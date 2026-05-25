@@ -1,12 +1,9 @@
 ﻿import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import AuthProvider from './providers/AuthProvider'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import MergedHeader from '@/components/layout/MergedHeader'
 import { Toaster } from 'react-hot-toast'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'LinkPlatform - Smart URL Shortener',
@@ -20,11 +17,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <head>
+        <link href="https://fonts.cdnfonts.com/css/tt-fors-trial" rel="stylesheet" />
+        <link href="https://fonts.cdnfonts.com/css/dyson-modern" rel="stylesheet" />
+      </head>
+      <body className="font-sans">
         <ThemeProvider>
           <AuthProvider>
             <MergedHeader />
-            <main className="pt-32">
+            <main>
               {children}
             </main>
             <Toaster 
