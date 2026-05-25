@@ -2,35 +2,31 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiMail, FiLock, FiArrowRight, FiBarChart2, FiLink, FiShield, FiZap, FiCheckCircle, FiEye, FiEyeOff } from 'react-icons/fi'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function LoginPage() {
   const { login } = useAuth()
-  const searchParams = useSearchParams()
-  
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [successMessage, setSuccessMessage] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return new URLSearchParams(window.location.search).get('registered') === 'true' 
-        ? 'Account created successfully! Please sign in.' 
-        : ''
-    }
-    return ''
-  })
+  const [successMessage, setSuccessMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Clean the URL once after showing the success message
+  // Read ?registered on the client only (avoids useSearchParams prerender error)
   useEffect(() => {
-    if (successMessage && searchParams.get('registered') === 'true') {
-      window.history.replaceState({}, '', '/login')
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('registered') === 'true') {
+        setSuccessMessage('Account created successfully! Please sign in.')
+        // Clean the URL
+        window.history.replaceState({}, '', '/login')
+      }
     }
-  }, [successMessage, searchParams])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
