@@ -3,6 +3,45 @@ import { supabase } from '@/lib/supabase'
 import { NextRequest } from 'next/server'
 import bcrypt from 'bcryptjs'
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function generateVisitorId(): string {
+  const timestamp = Date.now().toString(36)
+  const random = Math.random().toString(36).substring(2, 10)
+  return `visitor_${timestamp}_${random}`
+}
+
+function parseUserAgent(ua: string | null): { device_type: string; browser: string; os: string } {
+  if (!ua) return { device_type: 'unknown', browser: 'unknown', os: 'unknown' }
+
+  let device_type = 'desktop'
+  if (/mobile|android|iphone|ipad/i.test(ua)) device_type = 'mobile'
+  else if (/tablet|ipad/i.test(ua)) device_type = 'tablet'
+
+  let browser = 'unknown'
+  if (/chrome/i.test(ua) && !/edge|opr/i.test(ua)) browser = 'Chrome'
+  else if (/firefox/i.test(ua)) browser = 'Firefox'
+  else if (/safari/i.test(ua) && !/chrome/i.test(ua)) browser = 'Safari'
+  else if (/edge/i.test(ua)) browser = 'Edge'
+  else if (/opr|opera/i.test(ua)) browser = 'Opera'
+
+  let os = 'unknown'
+  if (/windows/i.test(ua)) os = 'Windows'
+  else if (/macintosh|mac os/i.test(ua)) os = 'macOS'
+  else if (/linux/i.test(ua)) os = 'Linux'
+  else if (/android/i.test(ua)) os = 'Android'
+  else if (/iphone|ipad|ipod/i.test(ua)) os = 'iOS'
+
+  return { device_type, browser, os }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ shortCode: string }> }
@@ -12,13 +51,10 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams
     const password = searchParams.get('password')
 
-    console.log('>>> Redirect called for:', shortCode)
-
     if (!shortCode) {
       return new NextResponse('Short code is required', { status: 400 })
     }
 
-    // Get link from database
     const { data: link, error } = await supabase
       .from('links')
       .select('*')
@@ -26,70 +62,60 @@ export async function GET(
       .single()
 
     if (error || !link) {
-      console.log('>>> Link not found:', shortCode)
       return new NextResponse('Link not found', { status: 404 })
     }
 
-    // Check if link is scheduled
     if (link.scheduled_at && new Date(link.scheduled_at) > new Date()) {
-      console.log('>>> Link is scheduled for future:', link.scheduled_at)
       return new NextResponse('Link not yet active', { status: 403 })
     }
 
-    // Check if link has expired
     if (link.expires_at && new Date(link.expires_at) < new Date()) {
-      console.log('>>> Link has expired')
       return new NextResponse('Link has expired', { status: 410 })
     }
 
-    // Check max clicks
     if (link.max_clicks && link.clicks_count >= link.max_clicks) {
-      console.log('>>> Link has reached max clicks')
       return new NextResponse('Link has reached maximum clicks', { status: 403 })
     }
 
-    // Check password protection
     if (link.password_hash) {
       if (!password) {
         return new NextResponse('Password required', { status: 401 })
       }
-
       const isValid = await bcrypt.compare(password, link.password_hash)
-
       if (!isValid) {
-        console.log('>>> Invalid password for link')
         return new NextResponse(null, {
           status: 302,
-          headers: {
-            'Location': `/${shortCode}?error=invalid`
-          }
+          headers: { 'Location': `/${shortCode}?error=invalid` }
         })
       }
     }
 
-    // Determine if we should show an ad (EVERY CLICK)
-    const shouldShowAd = true
+    const ua = request.headers.get('user-agent')
+    const { device_type, browser, os } = parseUserAgent(ua)
+    const referer = request.headers.get('referer') || 'direct'
+    const refererDomain = referer !== 'direct' ? (() => { try { return new URL(referer).hostname } catch { return 'unknown' } })() : 'direct'
+    const acceptLanguage = request.headers.get('accept-language')?.split(',')[0] || 'en-US'
 
-    // Track the click
     try {
-      await supabase
-        .from('click_analytics')
-        .insert([{
-          link_id: link.id,
-          user_id: link.user_id,
-          device_type: request.headers.get('sec-ch-ua-platform') || 'web',
-          browser: request.headers.get('sec-ch-ua') || 'unknown',
-          referer: request.headers.get('referer') || 'direct',
-          clicked_at: new Date().toISOString(),
-          ip_address: request.headers.get('x-forwarded-for') || 'unknown',
-          success: true,
-          visitor_id: `visitor_${Date.now()}`
-        }])
+      await supabase.from('click_analytics').insert([{
+        link_id: link.id,
+        user_id: link.user_id,
+        device_type,
+        browser,
+        os,
+        referer,
+        referer_domain: refererDomain,
+        clicked_at: new Date().toISOString(),
+        ip_address: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown',
+        user_agent: ua || 'unknown',
+        success: true,
+        visitor_id: generateVisitorId(),
+        language: acceptLanguage,
+      }])
     } catch (e) {
-      console.error('>>> Error tracking click:', e)
+      console.error('Error tracking click:', e)
     }
 
-    // Update link click count
     try {
       await supabase
         .from('links')
@@ -99,12 +125,13 @@ export async function GET(
         })
         .eq('id', link.id)
     } catch (e) {
-      console.error('>>> Error updating click count:', e)
+      console.error('Error updating click count:', e)
     }
 
-    // Show ad page if needed
+    const shouldShowAd = link.monetize !== false
+
     if (shouldShowAd) {
-      console.log('>>> Showing ad for link:', shortCode)
+      const safeUrl = escapeHtml(link.original_url)
       return new NextResponse(
         `<!DOCTYPE html>
         <html>
@@ -113,7 +140,7 @@ export async function GET(
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
-              body { 
+              body {
                 font-family: system-ui, -apple-system, sans-serif;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 display: flex;
@@ -153,20 +180,18 @@ export async function GET(
               <p>You'll be redirected in <span id="countdown">5</span> seconds</p>
               <p class="support">Thanks for supporting LinkPlatform!</p>
             </div>
-            
-            <!-- Popunder Ad Code -->
+
             <script src="https://pl28900365.effectivegatecpm.com/e0/04/20/e00420d152c910988ed3141d4d763572.js"></script>
-            
+
             <script>
-              // Countdown timer
-              let seconds = 5;
-              const countdownEl = document.getElementById('countdown');
-              const interval = setInterval(() => {
+              var seconds = 5;
+              var countdownEl = document.getElementById('countdown');
+              var interval = setInterval(function() {
                 seconds--;
                 countdownEl.textContent = seconds;
                 if (seconds <= 0) {
                   clearInterval(interval);
-                  window.location.href = '${link.original_url}';
+                  window.location.href = '${safeUrl}';
                 }
               }, 1000);
             </script>
@@ -174,17 +199,15 @@ export async function GET(
         </html>`,
         {
           status: 200,
-          headers: { 'Content-Type': 'text/html' }
+          headers: { 'Content-Type': 'text/html; charset=utf-8' }
         }
       )
     }
 
-    // Normal redirect without ad
-    console.log('>>> No ad, redirecting to:', link.original_url)
     return NextResponse.redirect(link.original_url, 302)
 
   } catch (error) {
-    console.error('>>> Redirect error:', error)
+    console.error('Redirect error:', error)
     return new NextResponse('Internal error', { status: 500 })
   }
 }

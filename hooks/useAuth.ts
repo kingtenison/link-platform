@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+﻿import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface User {
@@ -7,26 +7,52 @@ interface User {
   name: string | null
 }
 
+let cachedUser: User | null = null
+let cachedPromise: Promise<User | null> | null = null
+
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(cachedUser)
+  const [loading, setLoading] = useState(cachedUser === null)
   const router = useRouter()
+  const mountedRef = useRef(true)
 
-  useEffect(() => {
-    fetchUser()
-  }, [])
+  const fetchUser = useCallback(async () => {
+    if (cachedPromise) {
+      const u = await cachedPromise
+      if (mountedRef.current) {
+        setUser(u)
+        setLoading(false)
+      }
+      return u
+    }
 
-  async function fetchUser() {
-    try {
-      const res = await fetch('/api/auth/me')
-      const data = await res.json()
-      setUser(data.user)
-    } catch (error) {
-      setUser(null)
-    } finally {
+    cachedPromise = (async () => {
+      try {
+        const res = await fetch('/api/auth/me')
+        const data = await res.json()
+        cachedUser = data.user
+        return data.user
+      } catch {
+        cachedUser = null
+        return null
+      }
+    })()
+
+    const u = await cachedPromise
+    cachedPromise = null
+
+    if (mountedRef.current) {
+      setUser(u)
       setLoading(false)
     }
-  }
+    return u
+  }, [])
+
+  useEffect(() => {
+    mountedRef.current = true
+    fetchUser()
+    return () => { mountedRef.current = false }
+  }, [fetchUser])
 
   async function login(email: string, password: string) {
     const res = await fetch('/api/auth/login', {
@@ -41,6 +67,7 @@ export function useAuth() {
       throw new Error(data.error || 'Login failed')
     }
 
+    cachedUser = data.user
     setUser(data.user)
     router.push('/dashboard')
     router.refresh()
@@ -66,10 +93,10 @@ export function useAuth() {
     try {
       await fetch('/api/auth/logout', { 
         method: 'POST',
-        credentials: 'include' // Important: include cookies
+        credentials: 'include'
       })
+      cachedUser = null
       setUser(null)
-      // Force a hard navigation to clear all state
       window.location.href = '/'
     } catch (error) {
       console.error('Logout error:', error)

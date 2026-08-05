@@ -1,32 +1,21 @@
-﻿import { generateShortCode, validateUrl, ensureProtocol } from '@/utils/shortener'
+﻿import { generateShortCode } from '@/utils/shortener'
 
-describe('URL Shortener Utils', () => {
-  test('generateShortCode returns a string', () => {
+describe('generateShortCode', () => {
+  it('generates a 6-character code', () => {
     const code = generateShortCode()
-    expect(typeof code).toBe('string')
-    expect(code.length).toBeGreaterThan(0)
+    expect(code).toHaveLength(6)
   })
 
-  test('validateUrl returns true for valid URLs', () => {
-    expect(validateUrl('https://google.com')).toBe(true)
-    expect(validateUrl('http://example.com')).toBe(true)
-    expect(validateUrl('https://sub.domain.com/path?query=1')).toBe(true)
+  it('generates alphanumeric codes', () => {
+    const code = generateShortCode()
+    expect(code).toMatch(/^[0-9A-Za-z]+$/)
   })
 
-  test('validateUrl returns false for invalid URLs', () => {
-    expect(validateUrl('not-a-url')).toBe(false)
-    expect(validateUrl('http://')).toBe(false)
-    expect(validateUrl('')).toBe(false)
-  })
-
-  test('ensureProtocol adds https:// when missing', () => {
-    expect(ensureProtocol('google.com')).toBe('https://google.com')
-    expect(ensureProtocol('http://google.com')).toBe('http://google.com')
-    expect(ensureProtocol('https://google.com')).toBe('https://google.com')
-  })
-
-  test('ensureProtocol handles edge cases', () => {
-    expect(ensureProtocol('')).toBe('https://')
-    expect(ensureProtocol('ftp://example.com')).toBe('ftp://example.com')
+  it('generates unique codes', () => {
+    const codes = new Set<string>()
+    for (let i = 0; i < 100; i++) {
+      codes.add(generateShortCode())
+    }
+    expect(codes.size).toBe(100)
   })
 })

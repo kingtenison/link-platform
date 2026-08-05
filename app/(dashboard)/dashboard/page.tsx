@@ -15,18 +15,13 @@ import {
   FiMousePointer,
   FiZap,
   FiEye,
-  FiCopy,
-  FiTrendingUp,
-  FiClock,
-  FiAward,
-  FiActivity
+  FiCopy
 } from 'react-icons/fi'
 import { supabase } from '@/lib/supabase'
 import { motion, Variants } from 'framer-motion'
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
 import MergedHeader from '@/components/layout/MergedHeader'
-import NativeBanner from '@/components/ads/NativeBanner'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -40,7 +35,7 @@ export default function DashboardPage() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [recentLinks, setRecentLinks] = useState<any[]>([])
-  const [hoveredStat, setHoveredStat] = useState<string | null>(null)
+
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -162,7 +157,7 @@ export default function DashboardPage() {
       icon: FiLink, 
       color: 'from-blue-500 to-purple-600',
       description: 'Active short links',
-      trend: '+2 this week',
+      trend: 'All time',
       bgImage: statBackgrounds[0]
     },
     { 
@@ -171,7 +166,7 @@ export default function DashboardPage() {
       icon: FiMousePointer, 
       color: 'from-green-500 to-teal-600',
       description: 'All-time clicks',
-      trend: '+15% vs last week',
+      trend: 'All time total',
       bgImage: statBackgrounds[1]
     },
     { 
@@ -180,7 +175,7 @@ export default function DashboardPage() {
       icon: FiCode, 
       color: 'from-purple-500 to-pink-600',
       description: 'Ready to download',
-      trend: 'All links have QR',
+      trend: 'Auto-generated',
       bgImage: statBackgrounds[2]
     },
     { 
@@ -189,7 +184,7 @@ export default function DashboardPage() {
       icon: FiShield, 
       color: 'from-orange-500 to-red-600',
       description: 'All links safe',
-      trend: 'No threats detected',
+      trend: 'Account status',
       bgImage: statBackgrounds[3]
     },
   ]
@@ -268,8 +263,7 @@ export default function DashboardPage() {
                   variants={itemVariants}
                   whileHover={{ scale: 1.03, y: -5 }}
                   transition={{ type: "spring", stiffness: 300 }}
-                  onHoverStart={() => setHoveredStat(stat.label)}
-                  onHoverEnd={() => setHoveredStat(null)}
+
                   className="relative overflow-hidden rounded-xl sm:rounded-2xl group"
                 >
                   <div 

@@ -19,7 +19,6 @@ export async function GET() {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    console.log('>>> Fetching raw clicks for user:', userId)
 
     // Get raw clicks with all fields
     const { data: clicks, error: clicksError } = await supabase
@@ -54,7 +53,6 @@ export async function GET() {
       throw linksError
     }
 
-    console.log('>>> Found clicks:', clicks?.length || 0)
 
     return NextResponse.json({
       user_id: userId,

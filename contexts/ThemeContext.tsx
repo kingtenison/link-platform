@@ -12,35 +12,49 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
+function applyTheme(theme: Theme) {
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+  }
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light')
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Check local storage first
     const savedTheme = localStorage.getItem('theme') as Theme | null
     if (savedTheme) {
       setTheme(savedTheme)
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+      applyTheme(savedTheme)
     } else {
-      // Check system preference
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       const defaultTheme = systemPrefersDark ? 'dark' : 'light'
       setTheme(defaultTheme)
-      document.documentElement.classList.toggle('dark', defaultTheme === 'dark')
+      applyTheme(defaultTheme)
       localStorage.setItem('theme', defaultTheme)
     }
+    setMounted(true)
   }, [])
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
     localStorage.setItem('theme', newTheme)
-    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+    applyTheme(newTheme)
+  }
+
+  const setThemePersistent = (newTheme: Theme) => {
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+    applyTheme(newTheme)
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
-      {children}
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme: setThemePersistent }}>
+      <div style={{ visibility: mounted ? 'visible' : 'hidden' }}>
+        {children}
+      </div>
     </ThemeContext.Provider>
   )
 }

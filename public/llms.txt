@@ -1,0 +1,61 @@
+# LinkPlatform — Smart URL Shortener
+
+## What is LinkPlatform?
+
+LinkPlatform is a free, open-source URL shortening platform that provides real-time analytics, QR code generation, and link protection features. It enables users to create short, memorable links and track every click with detailed insights including device type, geographic location, referrer, and browser data.
+
+## Core Features
+
+- **URL Shortening**: Create short links from any valid URL. Custom aliases supported.
+- **Click Analytics**: Track clicks with device type, browser, OS, referrer, and geographic data.
+- **QR Code Generation**: Auto-generated QR codes for every link, downloadable as PNG.
+- **Password Protection**: Protect any link with a password.
+- **Link Expiration**: Set automatic expiration dates on links.
+- **Click Limits**: Set maximum click counts before a link auto-deactivates.
+- **Scheduled Links**: Schedule links to activate at a future date and time.
+- **Dark Mode**: Full light/dark theme support.
+- **Ad-Supported**: Free tier includes non-intrusive ads on redirect pages.
+
+## How It Works
+
+1. Sign up for a free account at https://linkplatform.io/register
+2. Paste any URL and optionally set a custom alias, password, or expiration
+3. Share your short link — e.g., https://linkplatform.io/abc123
+4. View real-time analytics on your dashboard at https://linkplatform.io/dashboard
+
+## API
+
+LinkPlatform provides a REST API for creating short links:
+
+**Endpoint**: `POST /api/links/shorten`
+**Authentication**: Cookie-based (login required)
+**Request Body**:
+```json
+{
+  "url": "https://example.com/long-url",
+  "customAlias": "my-link",
+  "password": "optional-password",
+  "expiresAt": "2026-12-31T23:59:59Z",
+  "maxClicks": 1000,
+  "scheduledAt": "2026-09-01T09:00:00Z"
+}
+```
+
+## Technology Stack
+
+- **Frontend**: Next.js 16, React 19, Tailwind CSS, Framer Motion, Recharts
+- **Backend**: Next.js API Routes, Supabase (PostgreSQL)
+- **Auth**: JWT (jose), bcryptjs, httpOnly cookies
+- **Monitoring**: Sentry
+- **Deployment**: Vercel
+
+## Pricing
+
+LinkPlatform is completely free. No paid tiers, no credit card required.
+
+## Links
+
+- Homepage: https://linkplatform.io
+- Dashboard: https://linkplatform.io/dashboard
+- Register: https://linkplatform.io/register
+- Login: https://linkplatform.io/login

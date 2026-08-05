@@ -1,9 +1,10 @@
 ﻿/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './hooks/**/*.{js,ts,jsx,tsx,mdx}',
+    './contexts/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -13,9 +14,6 @@ module.exports = {
       },
     },
   },
-
-  // Consistent full-width scaled wrapper used across dashboard + header
-  // Usage: className="dashboard-container"
   safelist: ['dashboard-container'],
   plugins: [],
 }

@@ -20,7 +20,6 @@ import {
 } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import { PageWrapper, AnimatedCard, itemVariants, buttonVariants } from '@/components/ui/animations'
-import NativeBanner from '@/components/ads/NativeBanner'
 import {
   LineChart,
   Line,
@@ -156,24 +155,32 @@ function AnalyticsContent() {
     }, {})
     setLocationData(Object.entries(locations).map(([name, value]) => ({ name, value })))
 
+    const daySpan = (() => {
+      if (clicks.length === 0) return 1
+      const dates = clicks.map(c => new Date(c.clicked_at).getTime())
+      const min = Math.min(...dates)
+      const max = Math.max(...dates)
+      return Math.max(1, Math.ceil((max - min) / (1000 * 60 * 60 * 24)) + 1)
+    })()
+
     setStats({
       totalClicks: clicks.length,
       uniqueVisitors: new Set(clicks.map(c => c.visitor_id)).size,
-      avgClicksPerDay: clicks.length > 0 ? clicks.length / 30 : 0
+      avgClicksPerDay: clicks.length > 0 ? clicks.length / daySpan : 0
     })
 
-    const clicksByDate = clicks.reduce((acc: any, click) => {
-      const date = format(new Date(click.clicked_at), 'MMM dd')
-      acc[date] = (acc[date] || 0) + 1
-      return acc
-    }, {})
+    const clicksByDate: Record<string, { date: string; clicks: number; sortKey: string }> = {}
 
-    const chart = Object.entries(clicksByDate).map(([date, clicks]) => ({
-      date,
-      clicks
-    })).sort((a, b) => {
-      return new Date(a.date).getTime() - new Date(b.date).getTime()
+    clicks.forEach((click: any) => {
+      const dateKey = format(new Date(click.clicked_at), 'yyyy-MM-dd')
+      const dateLabel = format(new Date(click.clicked_at), 'MMM dd')
+      if (!clicksByDate[dateKey]) clicksByDate[dateKey] = { date: dateLabel, clicks: 0, sortKey: dateKey }
+      clicksByDate[dateKey].clicks += 1
     })
+
+    const chart = Object.values(clicksByDate)
+      .map((entry) => ({ date: entry.date, clicks: entry.clicks }))
+      .sort((a, b) => a.date.localeCompare(b.date))
 
     setChartData(chart)
   }
@@ -291,7 +298,9 @@ function AnalyticsContent() {
           </div>
           <p className="text-gray-600 text-sm">Avg Clicks/Day</p>
         </AnimatedCard>
-            </div>`n`n      {/* Advertisement */}`n      <NativeBanner />`n`n      {/* Chart */}
+            </div>
+
+      {/* Chart */}
       <AnimatedCard className="p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Traffic Overview</h2>
         {chartData.length > 0 ? (

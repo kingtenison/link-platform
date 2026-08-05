@@ -1,29 +1,158 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken } from './lib/auth'
 
-export async function proxy(request: NextRequest) {
-  const token = request.cookies.get('token')?.value
-  const { pathname } = request.nextUrl
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
-  // Public paths that don't require authentication
-  const publicPaths = ['/', '/login', '/register', '/api/auth/login', '/api/auth/register']
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
+function checkRateLimit(
+  ip: string,
+  limit: number = 100,
+  windowMs: number = 60_000
+): boolean {
+  const now = Date.now()
+  const entry = rateLimitStore.get(ip)
 
-  if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (!entry || now > entry.resetTime) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now + windowMs })
+    return true
   }
 
-  if (token) {
-    const userId = await verifyToken(token)
-    if (!userId && !isPublicPath) {
-      return NextResponse.redirect(new URL('/login', request.url))
+  entry.count++
+  if (entry.count > limit) return false
+  return true
+}
+
+function cleanupRateLimitStore() {
+  const now = Date.now()
+  for (const [key, entry] of rateLimitStore) {
+    if (now > entry.resetTime) {
+      rateLimitStore.delete(key)
+    }
+  }
+}
+
+let lastCleanup = Date.now()
+function maybeCleanup() {
+  const now = Date.now()
+  if (now - lastCleanup > 60_000) {
+    lastCleanup = now
+    cleanupRateLimitStore()
+  }
+}
+
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/sitemap.xml',
+  '/robots.txt',
+  '/llms.txt',
+  '/favicon.ico',
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/logout',
+  '/api/auth/me',
+]
+
+const DEBUG_PATHS = [
+  '/debug',
+  '/raw-data',
+  '/test-analytics',
+  '/api/debug',
+]
+
+const PROTECTED_PREFIXES = [
+  '/dashboard',
+  '/api/links',
+  '/api/debug',
+]
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+}
+
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
+}
+
+function isDebugPath(pathname: string): boolean {
+  return DEBUG_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+}
+
+export async function proxy(request: NextRequest) {
+  maybeCleanup()
+
+  const { pathname } = request.nextUrl
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+
+  if (process.env.NODE_ENV === 'production' && isDebugPath(pathname)) {
+    return new NextResponse('Not Found', { status: 404 })
+  }
+
+  if (!checkRateLimit(ip, 200, 60_000)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
+  if (
+    pathname.startsWith('/api/auth/login') ||
+    pathname.startsWith('/api/auth/register') ||
+    pathname.startsWith('/api/auth/reset-password')
+  ) {
+    if (!checkRateLimit(`auth:${ip}`, 10, 60_000)) {
+      return NextResponse.json(
+        { error: 'Too many authentication attempts. Please try again later.' },
+        { status: 429 }
+      )
     }
   }
 
-  return NextResponse.next()
+  if (isPublicPath(pathname)) {
+    return NextResponse.next()
+  }
+
+  if (!isProtectedPath(pathname)) {
+    return NextResponse.next()
+  }
+
+  const token = request.cookies.get('token')?.value
+
+  if (!token) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('callback', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  const userId = await verifyToken(token)
+
+  if (!userId) {
+    const response = pathname.startsWith('/api/')
+      ? NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
+      : NextResponse.redirect(new URL('/login', request.url))
+
+    response.cookies.set('token', '', { maxAge: 0, path: '/' })
+    return response
+  }
+
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-user-id', userId)
+
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  })
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|sitemap\\.xml|robots\\.txt|llms\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

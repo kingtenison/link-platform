@@ -1,22 +1,15 @@
-﻿const nextJest = require('next/jest')
+﻿import type { Config } from 'jest'
+import nextJest from 'next/jest'
 
-const createJestConfig = nextJest({
-  dir: './',
-})
+const createJestConfig = nextJest({ dir: './' })
 
-const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testEnvironment: 'jest-environment-jsdom',
+const config: Config = {
+  testEnvironment: 'jsdom',
+  setupFilesAfterSetup: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
-    '^nanoid$': '<rootDir>/node_modules/nanoid/index.browser.js',
   },
-  transformIgnorePatterns: [
-    '/node_modules/(?!(nanoid)/)',
-  ],
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
-  },
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
 }
 
-module.exports = createJestConfig(customJestConfig)
+export default createJestConfig(config)

@@ -20,7 +20,6 @@ import {
   FiFilter
 } from 'react-icons/fi'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
-import NativeBanner from '@/components/ads/NativeBanner'
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
 
@@ -33,6 +32,8 @@ export default function LinksPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>('newest')
   const [showFilters, setShowFilters] = useState(false)
+  const [activeOnly, setActiveOnly] = useState(false)
+  const [withQrOnly, setWithQrOnly] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -55,6 +56,10 @@ export default function LinksPage() {
         link.original_url.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
+
+    if (activeOnly) {
+      filtered = filtered.filter(link => link.is_active)
+    }
     
     filtered.sort((a, b) => {
       if (sortBy === 'newest') {
@@ -67,7 +72,7 @@ export default function LinksPage() {
     })
     
     setFilteredLinks(filtered)
-  }, [searchTerm, links, sortBy])
+  }, [searchTerm, links, sortBy, activeOnly, withQrOnly])
 
   const fetchLinks = async () => {
     try {
@@ -254,16 +259,16 @@ if (loading || isLoading) {
             >
               <div className="flex gap-4">
                 <label className="flex items-center text-gray-600">
-                  <input type="checkbox" className="mr-2" /> Show active only
+                  <input type="checkbox" className="mr-2" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} /> Show active only
                 </label>
                 <label className="flex items-center text-gray-600">
-                  <input type="checkbox" className="mr-2" /> With QR codes
+                  <input type="checkbox" className="mr-2" checked={withQrOnly} onChange={(e) => setWithQrOnly(e.target.checked)} /> With QR codes
                 </label>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>`n`n      {/* Advertisement */}`n      <NativeBanner />
+      </motion.div>
 
       {/* Links Grid/Table */}
       {filteredLinks.length === 0 ? (
@@ -411,7 +416,7 @@ if (loading || isLoading) {
                   <motion.div 
                     className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
                     initial={{ width: '0%' }}
-                    animate={{ width: `${Math.min((link.clicks_count / 100) * 100, 100)}%` }}
+                    animate={{ width: `${Math.min((link.clicks_count / Math.max(...links.map(l => l.clicks_count || 1), 1)) * 100, 100)}%` }}
                     transition={{ duration: 1, delay: index * 0.1 }}
                   />
                 </div>

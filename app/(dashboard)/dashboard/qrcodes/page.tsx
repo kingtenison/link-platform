@@ -13,11 +13,9 @@ import {
   FiRefreshCw,
   FiGrid,
   FiArrowLeft,
-  FiArrowRight,
   FiCheck,
   FiDownloadCloud,
   FiEye,
-  FiTrash2,
   FiCode,
   FiLink as FiLinkIcon
 } from 'react-icons/fi'
@@ -113,7 +111,7 @@ export default function QRCodesPage() {
         setDownloading(false)
       }
       
-      img.src = 'data:image/svg+xml;base64,' + btoa(svgData)
+      img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
     } catch (error) {
       toast.error('Failed to download QR code')
       setDownloading(false)
@@ -389,7 +387,7 @@ export default function QRCodesPage() {
                           onClick={() => setShowPreview(false)}
                           className="p-2 hover:bg-gray-100 rounded-lg"
                         >
-                          
+                          ✕
                         </button>
                       </div>
                       <div className="flex justify-center p-8 bg-gray-50 rounded-xl">

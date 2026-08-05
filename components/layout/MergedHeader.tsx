@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import { motion } from 'framer-motion'
-import { FiLogOut, FiUser, FiZap, FiTrendingUp, FiClock, FiAward, FiBarChart2 } from 'react-icons/fi'
+import { FiLogOut, FiUser, FiZap, FiBarChart2 } from 'react-icons/fi'
 import { useEffect, useState } from 'react'
 
 interface MergedHeaderProps {
@@ -142,22 +142,6 @@ export default function MergedHeader({ stats, userName }: MergedHeaderProps) {
                       <span className="font-bold">{stats.totalLinks}</span> links ·{' '}
                       <span className="font-bold">{stats.totalClicks}</span> clicks
                     </p>
-                  </div>
- 
-                  {/* Quick stats chips */}
-                  <div className="flex flex-wrap gap-2">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1 text-xs sm:text-sm text-white flex items-center">
-                      <FiTrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
-                      <span className="hidden xs:inline">Growth:</span> +15%
-                    </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1 text-xs sm:text-sm text-white flex items-center">
-                      <FiClock className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
-                      <span className="hidden xs:inline">Peak:</span> 6-9PM
-                    </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1 text-xs sm:text-sm text-white flex items-center">
-                      <FiAward className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
-                      <span className="hidden xs:inline">Top:</span> Direct
-                    </div>
                   </div>
                 </div>
               </motion.div>

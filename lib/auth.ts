@@ -3,8 +3,12 @@ import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key-change-this'
+  process.env.JWT_SECRET
 )
+
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set. Authentication will fail.')
+}
 
 const SALT_ROUNDS = 10
 
@@ -67,8 +71,6 @@ export async function createUser(email: string, password: string, name: string) 
   try {
     const hashedPassword = await hashPassword(password)
     
-    console.log('>>> Creating user with hashed password:', { email, name })
-    
     const { data, error } = await supabase
       .from('users')
       .insert([
@@ -85,14 +87,13 @@ export async function createUser(email: string, password: string, name: string) 
       .single()
     
     if (error) {
-      console.error('>>> Supabase insert error:', error)
+      console.error('Supabase insert error:', error)
       throw new Error(error.message)
     }
     
-    console.log('>>> User created:', data.id)
     return data
   } catch (error) {
-    console.error('>>> Create user error:', error)
+    console.error('Create user error:', error)
     throw error
   }
 }

@@ -5,7 +5,6 @@ export async function POST(request: Request) {
   try {
     const { email, password, name } = await request.json()
 
-    console.log('Registration attempt:', { email, name })
 
     if (!email || !password || !name) {
       return NextResponse.json(

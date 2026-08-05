@@ -16,16 +16,6 @@ export function validateUrl(url: string): boolean {
   }
 }
 
-// Extract domain from URL
-export function extractDomain(url: string): string {
-  try {
-    const { hostname } = new URL(url)
-    return hostname.replace('www.', '')
-  } catch {
-    return ''
-  }
-}
-
 // Add https if no protocol, but preserve existing protocols
 export function ensureProtocol(url: string): string {
   if (!url) return 'https://'

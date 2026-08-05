@@ -14,16 +14,17 @@ export async function GET() {
     const userId = await verifyToken(token)
     
     if (!userId) {
-      // Clear invalid token
-      cookieStore.delete('token')
-      return NextResponse.json({ user: null })
+      const response = NextResponse.json({ user: null })
+      response.cookies.set('token', '', { maxAge: 0, path: '/' })
+      return response
     }
 
     const user = await getUserById(userId)
     
     if (!user) {
-      cookieStore.delete('token')
-      return NextResponse.json({ user: null })
+      const response = NextResponse.json({ user: null })
+      response.cookies.set('token', '', { maxAge: 0, path: '/' })
+      return response
     }
 
     return NextResponse.json({
@@ -35,11 +36,6 @@ export async function GET() {
     })
   } catch (error) {
     console.error('Me API error:', error)
-    // Clear token on error
-    try {
-      const cookieStore = await cookies()
-      cookieStore.delete('token')
-    } catch (e) {}
     return NextResponse.json({ user: null })
   }
 }
