@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   FiLink, 
-  FiBarChart2, 
   FiCode, 
   FiShield, 
   FiGrid, 
@@ -17,16 +16,14 @@ import {
   FiEye,
   FiCopy
 } from 'react-icons/fi'
-import { supabase } from '@/lib/supabase'
 import { motion, Variants } from 'framer-motion'
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
-import MergedHeader from '@/components/layout/MergedHeader'
+import type { ApiLink } from '@/lib/api'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [links, setLinks] = useState<any[]>([])
   const [stats, setStats] = useState({
     totalLinks: 0,
     totalClicks: 0,
@@ -34,7 +31,7 @@ export default function DashboardPage() {
     safetyScore: 100
   })
   const [isLoading, setIsLoading] = useState(true)
-  const [recentLinks, setRecentLinks] = useState<any[]>([])
+  const [recentLinks, setRecentLinks] = useState<ApiLink[]>([])
 
 
   // Redirect if not authenticated
@@ -53,26 +50,21 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const { data: linksData, error } = await supabase
-        .from('links')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
+      const res = await fetch('/api/links')
+      if (!res.ok) throw new Error('Failed to load links')
+      const data = await res.json()
+      const linksData: ApiLink[] = data.links || []
 
-      if (error) throw error
+      const totalClicks = linksData.reduce((sum, link) => sum + (link.clicks_count || 0), 0)
 
-      setLinks(linksData || [])
-      
-      const totalClicks = (linksData || []).reduce((sum, link) => sum + (link.clicks_count || 0), 0)
-      
       setStats({
-        totalLinks: linksData?.length || 0,
+        totalLinks: linksData.length,
         totalClicks: totalClicks,
-        qrCodes: linksData?.length || 0,
+        qrCodes: linksData.length,
         safetyScore: 100
       })
 
-      setRecentLinks(linksData?.slice(0, 5) || [])
+      setRecentLinks(linksData.slice(0, 5))
       setIsLoading(false)
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -80,17 +72,7 @@ export default function DashboardPage() {
     }
   }
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  }
-
-  const itemVariants: Variants = {
+const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
@@ -101,11 +83,11 @@ export default function DashboardPage() {
   // Loading state
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full"
+          className="w-16 h-16 border-4 border-teal-600 border-t-transparent rounded-full"
         />
       </div>
     )
@@ -121,7 +103,7 @@ export default function DashboardPage() {
       name: 'Create New Link', 
       href: '/dashboard/links/new', 
       icon: FiZap, 
-      color: 'from-blue-500 to-purple-600',
+      color: 'from-teal-500 to-cyan-600',
       description: 'Shorten a new URL',
       bgImage: 'url("https://images.unsplash.com/photo-1611926653458-09294b3142bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
     },
@@ -129,7 +111,7 @@ export default function DashboardPage() {
       name: 'View All Links', 
       href: '/dashboard/links', 
       icon: FiGrid, 
-      color: 'from-purple-500 to-pink-600',
+      color: 'from-amber-500 to-orange-600',
       description: 'Manage your links',
       bgImage: 'url("https://images.unsplash.com/photo-1611926653458-09294b3142bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
     },
@@ -137,7 +119,7 @@ export default function DashboardPage() {
       name: 'QR Codes', 
       href: '/dashboard/qrcodes', 
       icon: FiCode, 
-      color: 'from-green-500 to-blue-600',
+      color: 'from-teal-500 to-cyan-600',
       description: 'Generate & download',
       bgImage: 'url("https://images.unsplash.com/photo-1611926653458-09294b3142bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
     },
@@ -155,7 +137,7 @@ export default function DashboardPage() {
       label: 'Total Links', 
       value: stats.totalLinks, 
       icon: FiLink, 
-      color: 'from-blue-500 to-purple-600',
+      color: 'from-teal-500 to-cyan-600',
       description: 'Active short links',
       trend: 'All time',
       bgImage: statBackgrounds[0]
@@ -173,7 +155,7 @@ export default function DashboardPage() {
       label: 'QR Codes', 
       value: stats.qrCodes, 
       icon: FiCode, 
-      color: 'from-purple-500 to-pink-600',
+      color: 'from-amber-500 to-orange-600',
       description: 'Ready to download',
       trend: 'Auto-generated',
       bgImage: statBackgrounds[2]
@@ -189,17 +171,21 @@ export default function DashboardPage() {
     },
   ]
 
-  return (
+return (
     <>
-      <MergedHeader stats={stats} userName={user?.name ?? undefined} />
-      <main className="pt-16 sm:pt-20">
-        <div className="dashboard-container">
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-12 sm:space-y-16 lg:space-y-20"
-          >
+<div className="dashboard-container">
+        <h1 className="sr-only">Dashboard</h1>
+        <div className="space-y-12 sm:space-y-16 lg:space-y-20">
+            {/* Welcome */}
+            <div className="pt-8 sm:pt-10">
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Welcome back, {user?.name?.split(' ')[0] || 'there'} 👋
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Here&apos;s what&apos;s happening with your links today.
+              </p>
+            </div>
+
             {/* Quick Actions */}
             <div>
               <div className="flex items-center justify-between mb-6">
@@ -257,7 +243,7 @@ export default function DashboardPage() {
                 variants={itemVariants}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10"
               >
-              {statCards.map((stat, index) => (
+              {statCards.map((stat) => (
                 <motion.div
                   key={stat.label}
                   variants={itemVariants}
@@ -355,7 +341,7 @@ export default function DashboardPage() {
                   className="absolute inset-0 bg-cover bg-center"
                   style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80")' }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-700/95 via-purple-700/95 to-pink-700/95" />
+                <div className="absolute inset-0 bg-gradient-to-br from-teal-700/95 via-cyan-700/95 to-gray-900/95" />
                 
                 <div className="relative text-white p-8 lg:p-10">
 
@@ -370,7 +356,7 @@ export default function DashboardPage() {
                     </p>
                     <Link
                       href="/dashboard/links/new"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-2xl font-semibold hover:bg-white/90 transition-colors text-lg"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-700 rounded-2xl font-semibold hover:bg-white/90 transition-colors text-lg"
                     >
                       Create your first link
                     </Link>
@@ -422,11 +408,10 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              </div>
-            </motion.div>
-          </div>
-        </main>
-      </>
+            </div>
+        </div>
+      </div>
+    </>
     )
   }
 

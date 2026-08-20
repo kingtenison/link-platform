@@ -21,17 +21,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
     }
 
+    // Authentication is optional: logged-in users own their links,
+    // anonymous visitors can shorten instantly (user_id = null).
+    let userId: string | null = null
     const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
 
-    if (!token) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const userId = await verifyToken(token)
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 })
+    if (token) {
+      userId = await verifyToken(token)
     }
 
     const cleanUrl = ensureProtocol(url)
@@ -117,8 +114,10 @@ export async function POST(request: Request) {
       shortUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/${link.short_code}`,
       originalUrl: link.original_url,
       protection: link.protection_type,
+      anonymous: userId === null,
     })
-  } catch {
+  } catch (err) {
+    console.error('Shorten error details:', err)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

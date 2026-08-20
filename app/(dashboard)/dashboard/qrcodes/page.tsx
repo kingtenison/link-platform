@@ -1,9 +1,9 @@
 ﻿'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { useEffect, useState, Suspense, useLayoutEffect, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import type { ApiLink } from '@/lib/api'
 import Link from 'next/link'
 import { 
   FiDownload, 
@@ -22,18 +22,44 @@ import {
 import QRCode from 'react-qr-code'
 import toast from 'react-hot-toast'
 
-export default function QRCodesPage() {
+function QRCodesContent() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [links, setLinks] = useState<any[]>([])
-  const [filteredLinks, setFilteredLinks] = useState<any[]>([])
-  const [selectedLink, setSelectedLink] = useState<any>(null)
+  const searchParams = useSearchParams()
+  const [links, setLinks] = useState<ApiLink[]>([])
+  const [filteredLinks, setFilteredLinks] = useState<ApiLink[]>([])
+  const [selectedLink, setSelectedLink] = useState<ApiLink | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [qrSize, setQrSize] = useState(256)
   const [showPreview, setShowPreview] = useState(false)
+  const qrBoxRef = useRef<HTMLDivElement>(null)
+  const previewBoxRef = useRef<HTMLDivElement>(null)
+  const [qrBoxWidth, setQrBoxWidth] = useState(0)
+  const [previewBoxWidth, setPreviewBoxWidth] = useState(0)
+
+  useLayoutEffect(() => {
+    if (!qrBoxRef.current) return
+    const measure = () => setQrBoxWidth(qrBoxRef.current?.clientWidth ?? 0)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(qrBoxRef.current)
+    return () => ro.disconnect()
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!showPreview || !previewBoxRef.current) return
+    const measure = () => setPreviewBoxWidth(previewBoxRef.current?.clientWidth ?? 0)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(previewBoxRef.current)
+    return () => ro.disconnect()
+  }, [showPreview])
+
+  const displayQrSize = qrBoxWidth > 0 ? Math.min(qrSize, Math.max(128, qrBoxWidth - 64)) : qrSize
+  const previewQrSize = previewBoxWidth > 0 ? Math.min(400, Math.max(128, previewBoxWidth - 64)) : 400
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,6 +71,7 @@ export default function QRCodesPage() {
     if (user) {
       fetchLinks()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   useEffect(() => {
@@ -59,21 +86,29 @@ export default function QRCodesPage() {
     }
   }, [searchTerm, links])
 
+  // Preselect link from ?link= param
+  useEffect(() => {
+    const linkId = searchParams.get('link')
+    if (linkId && links.length > 0) {
+      const match = links.find(l => l.id === linkId)
+      if (match) setSelectedLink(match)
+    }
+  }, [searchParams, links])
+
   const fetchLinks = async () => {
     try {
-      const { data, error } = await supabase
-        .from('links')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setLinks(data || [])
-      setFilteredLinks(data || [])
+      const res = await fetch('/api/links')
+      if (!res.ok) throw new Error('Failed to load links')
+      const data = await res.json()
+      const fetched: ApiLink[] = data.links || []
+      setLinks(fetched)
+      setFilteredLinks(fetched)
       
       // Auto-select first link if available
-      if (data && data.length > 0) {
-        setSelectedLink(data[0])
+      if (fetched.length > 0 && !selectedLink) {
+        const linkId = searchParams.get('link')
+        const match = linkId ? fetched.find(l => l.id === linkId) : undefined
+        setSelectedLink(match || fetched[0])
       }
     } catch (error) {
       console.error('Error fetching links:', error)
@@ -111,8 +146,8 @@ export default function QRCodesPage() {
         setDownloading(false)
       }
       
-      img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
-    } catch (error) {
+img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
+    } catch {
       toast.error('Failed to download QR code')
       setDownloading(false)
     }
@@ -138,7 +173,7 @@ export default function QRCodesPage() {
   }
 
   return (
-    <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-16 sm:pt-20 space-y-12 sm:space-y-16 lg:space-y-20">
+<div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 space-y-12 sm:space-y-16 lg:space-y-20">
       {/* Header with Navigation */}
       <div className="glass-card p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -153,7 +188,7 @@ export default function QRCodesPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300"
+              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600"
             >
               <FiArrowLeft className="w-4 h-4 mr-2" />
               Dashboard
@@ -172,14 +207,14 @@ export default function QRCodesPage() {
       {links.length === 0 ? (
         // Empty State with Action Buttons
         <div className="glass-card p-12 text-center">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mb-6">
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-teal-400 to-cyan-500 rounded-3xl flex items-center justify-center mb-6">
             <FiCode className="w-12 h-12 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">No Links Yet</h2>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
             Create your first shortened link to generate QR codes
           </p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/dashboard/links/new"
               className="white-btn px-8 py-3 text-lg"
@@ -187,9 +222,9 @@ export default function QRCodesPage() {
               <FiLinkIcon className="w-5 h-5 mr-2" />
               Create Your First Link
             </Link>
-            <Link
+<Link
               href="/dashboard/links"
-              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 px-8 py-3 text-lg"
+              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600 px-8 py-3 text-lg"
             >
               <FiEye className="w-5 h-5 mr-2" />
               View Links
@@ -216,12 +251,13 @@ export default function QRCodesPage() {
               {/* Links List */}
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                 {filteredLinks.map((link) => (
-                  <button
+<button
                     key={link.id}
                     onClick={() => setSelectedLink(link)}
+                    aria-pressed={selectedLink?.id === link.id}
                     className={`w-full text-left p-4 rounded-xl transition-all ${
                       selectedLink?.id === link.id
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg'
                         : 'hover:bg-white/50'
                     }`}
                   >
@@ -244,7 +280,7 @@ export default function QRCodesPage() {
 
                 {filteredLinks.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    No links found matching "{searchTerm}"
+                    No links found matching &quot;{searchTerm}&quot;
                   </div>
                 )}
               </div>
@@ -285,10 +321,11 @@ export default function QRCodesPage() {
                       readOnly
                       className="flex-1 bg-transparent text-sm text-gray-600 outline-none"
                     />
-                    <button
+<button
                       onClick={() => copyToClipboard(getFullUrl(selectedLink.short_code))}
                       className="p-2 hover:bg-white rounded-lg transition-colors"
                       title="Copy URL"
+                      aria-label={`Copy URL for ${selectedLink.short_code}`}
                     >
                       {copied ? (
                         <FiCheck className="w-4 h-4 text-green-500" />
@@ -296,11 +333,13 @@ export default function QRCodesPage() {
                         <FiCopy className="w-4 h-4 text-gray-500" />
                       )}
                     </button>
-                    <a
+<a
                       href={`/${selectedLink.short_code}`}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="p-2 hover:bg-white rounded-lg transition-colors"
                       title="Open link"
+                      aria-label={`Open ${selectedLink.short_code} in new tab`}
                     >
                       <FiExternalLink className="w-4 h-4 text-gray-500" />
                     </a>
@@ -309,14 +348,15 @@ export default function QRCodesPage() {
 
                 {/* QR Code Display */}
                 <div className="flex flex-col items-center mb-6">
-                  <div 
-                    className="bg-white p-8 rounded-2xl shadow-lg mb-4 cursor-pointer hover:shadow-xl transition-shadow"
+<div 
+                    ref={qrBoxRef}
+                    className="bg-white p-4 sm:p-8 rounded-2xl shadow-lg mb-4 cursor-pointer hover:shadow-xl transition-shadow"
                     onClick={() => setShowPreview(!showPreview)}
                   >
                     <QRCode
                       id="qr-code"
                       value={getFullUrl(selectedLink.short_code)}
-                      size={qrSize}
+                      size={displayQrSize}
                       level="H"
                       bgColor="#FFFFFF"
                       fgColor="#000000"
@@ -359,17 +399,17 @@ export default function QRCodesPage() {
                       )}
                     </button>
                     
-                    <button
+<button
                       onClick={() => setShowPreview(!showPreview)}
-                      className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300"
+                      className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600"
                     >
                       <FiEye className="w-4 h-4 mr-2" />
                       {showPreview ? 'Hide' : 'Preview'} Large
                     </button>
 
-                    <Link
-                      href={`/dashboard/links?edit=${selectedLink.id}`}
-                      className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300"
+<Link
+                      href={`/dashboard/links/new?edit=${selectedLink.id}`}
+                      className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600"
                     >
                       <FiLinkIcon className="w-4 h-4 mr-2" />
                       Edit Link
@@ -380,20 +420,21 @@ export default function QRCodesPage() {
                 {/* Preview Modal */}
                 {showPreview && (
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-8 max-w-2xl w-full">
-                      <div className="flex justify-between items-center mb-4">
+                    <div className="bg-white rounded-2xl p-4 sm:p-8 max-w-2xl w-full">
+<div className="flex justify-between items-center mb-4">
                         <h3 className="text-xl font-semibold">QR Code Preview</h3>
                         <button
                           onClick={() => setShowPreview(false)}
                           className="p-2 hover:bg-gray-100 rounded-lg"
+                          aria-label="Close preview"
                         >
                           ✕
                         </button>
                       </div>
-                      <div className="flex justify-center p-8 bg-gray-50 rounded-xl">
+<div ref={previewBoxRef} className="flex justify-center p-4 sm:p-8 bg-gray-50 rounded-xl">
                         <QRCode
                           value={getFullUrl(selectedLink.short_code)}
-                          size={400}
+                          size={previewQrSize}
                           level="H"
                         />
                       </div>
@@ -405,9 +446,9 @@ export default function QRCodesPage() {
                           <FiDownload className="w-4 h-4 mr-2" />
                           Download
                         </button>
-                        <button
+<button
                           onClick={() => setShowPreview(false)}
-                          className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300"
+                          className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600"
                         >
                           Close
                         </button>
@@ -419,11 +460,11 @@ export default function QRCodesPage() {
                 {/* Stats Summary */}
                 <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-800">{selectedLink.clicks_count}</div>
+                    <div className="text-lg sm:text-2xl font-bold text-gray-800">{selectedLink.clicks_count}</div>
                     <div className="text-sm text-gray-500">Total Clicks</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-800">
+<div className="text-sm sm:text-2xl font-bold text-gray-800">
                       {new Date(selectedLink.created_at).toLocaleDateString()}
                     </div>
                     <div className="text-sm text-gray-500">Created</div>
@@ -431,7 +472,7 @@ export default function QRCodesPage() {
                   <div className="text-center">
                     <button
                       onClick={() => window.open(`/${selectedLink.short_code}`, '_blank')}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center gap-1"
+                      className="text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center justify-center gap-1"
                     >
                       Test Link
                       <FiExternalLink className="w-3 h-3" />
@@ -454,15 +495,24 @@ export default function QRCodesPage() {
         </div>
       )}
 
-      {/* Floating Action Button for Mobile */}
+{/* Floating Action Button for Mobile */}
       {links.length > 0 && (
         <Link
           href="/dashboard/links/new"
           className="fixed bottom-6 right-6 lg:hidden white-btn p-4 rounded-full shadow-lg"
+          aria-label="Create new link"
         >
           <FiLinkIcon className="w-6 h-6" />
         </Link>
       )}
     </div>
+  )
+}
+
+export default function QRCodesPage() {
+  return (
+    <Suspense fallback={null}>
+      <QRCodesContent />
+    </Suspense>
   )
 }

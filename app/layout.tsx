@@ -2,6 +2,7 @@
 import './globals.css'
 import AuthProvider from './providers/AuthProvider'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { MotionConfig } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://linkplatform.io'
@@ -82,13 +83,26 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.cdnfonts.com/css/tt-fors-trial" rel="stylesheet" />
         <link href="https://fonts.cdnfonts.com/css/dyson-modern" rel="stylesheet" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="font-sans">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-teal-600 focus:text-white focus:rounded-lg focus:font-medium"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider>
           <AuthProvider>
-            <main>
-              {children}
-            </main>
+            <MotionConfig reducedMotion="user">
+              <main id="main" tabIndex={-1}>
+                {children}
+              </main>
+            </MotionConfig>
             <Toaster 
               position="top-right"
               toastOptions={{

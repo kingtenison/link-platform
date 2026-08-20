@@ -5,15 +5,17 @@ import {
   FiBarChart2,
   FiCode,
   FiShield,
-  FiStar,
   FiZap,
   FiGlobe,
   FiTrendingUp,
   FiChevronDown,
+  FiLink,
+  FiCheck,
 } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import MergedHeader from '@/components/layout/MergedHeader'
 
 const FAQ = [
   {
@@ -53,9 +55,10 @@ const FAQ = [
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="border-b border-white/10">
+    <div className="border-b border-white/10 last:border-b-0">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between py-5 text-left"
       >
         <span className="text-lg font-medium text-white pr-4">{q}</span>
@@ -84,7 +87,10 @@ export default function Home() {
   const { user, loading } = useAuth()
   const [shortUrl, setShortUrl] = useState('')
   const [shortenedUrl, setShortenedUrl] = useState('')
+  const [isAnonymous, setIsAnonymous] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [isShortening, setIsShortening] = useState(false)
+  const [error, setError] = useState('')
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
@@ -102,23 +108,61 @@ export default function Home() {
     }
   }, [])
 
+  const isValidUrl = (value: string) => {
+    if (!value.trim()) return false
+    try {
+      const parsed = new URL(value.trim())
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch {
+      try {
+        const prefixed = new URL('https://' + value.trim())
+        return prefixed.hostname.includes('.')
+      } catch {
+        return false
+      }
+    }
+  }
+
+  const scrollToShortener = () => {
+    document.getElementById('shortener')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
   const handleShorten = async () => {
-    if (!shortUrl.trim()) return
+    const trimmed = shortUrl.trim()
+    if (!isValidUrl(trimmed)) {
+      setError('Please enter a valid http(s) URL.')
+      return
+    }
+    setError('')
     setIsShortening(true)
     try {
       const res = await fetch('/api/links/shorten', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: shortUrl })
+        body: JSON.stringify({ url: trimmed })
       })
       const data = await res.json()
-      if (data.shortUrl) {
-        setShortenedUrl(data.shortUrl)
+      if (!res.ok || !data.shortUrl) {
+        setError(data.error || 'Something went wrong. Please try again.')
+        return
       }
+      setShortenedUrl(data.shortUrl)
+      setIsAnonymous(data.anonymous === true)
+      setCopied(false)
     } catch {
-      // silently fail
+      setError('Something went wrong. Please try again.')
     } finally {
       setIsShortening(false)
+    }
+  }
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shortenedUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setError('Could not copy. Select the link to copy it manually.')
     }
   }
 
@@ -127,43 +171,64 @@ export default function Home() {
       icon: FiZap,
       title: 'Instant Redirects',
       desc: 'Redirects complete in under 50ms from a global edge network.',
-      color: 'from-yellow-400 to-orange-500',
+      color: 'from-amber-400 to-orange-500',
       delay: 0.1,
     },
     {
       icon: FiBarChart2,
       title: 'Click Analytics',
       desc: 'Track device, browser, location, and referrer for every click in real-time.',
-      color: 'from-green-400 to-emerald-500',
+      color: 'from-teal-400 to-emerald-500',
       delay: 0.2,
     },
     {
       icon: FiCode,
       title: 'QR Codes',
       desc: 'Auto-generated, downloadable QR codes for every shortened link.',
-      color: 'from-purple-400 to-pink-500',
+      color: 'from-cyan-400 to-teal-500',
       delay: 0.3,
     },
     {
       icon: FiShield,
       title: 'Link Protection',
       desc: 'Password-protect links, set expiration dates, and limit total clicks.',
-      color: 'from-blue-400 to-indigo-500',
+      color: 'from-teal-500 to-cyan-600',
       delay: 0.4,
     },
     {
       icon: FiGlobe,
       title: 'Custom Aliases',
       desc: 'Create memorable branded short URLs with your own custom aliases.',
-      color: 'from-cyan-400 to-blue-500',
+      color: 'from-cyan-400 to-sky-500',
       delay: 0.5,
     },
     {
       icon: FiTrendingUp,
       title: 'Scheduled Links',
       desc: 'Schedule links to activate at a future date and time automatically.',
-      color: 'from-red-400 to-pink-500',
+      color: 'from-orange-400 to-red-500',
       delay: 0.6,
+    },
+  ]
+
+  const steps = [
+    {
+      n: '01',
+      icon: FiLink,
+      title: 'Paste your long link',
+      desc: 'Drop in any URL — a blog post, product page, wherever you want to send people. No signup needed.',
+    },
+    {
+      n: '02',
+      icon: FiZap,
+      title: 'Get your short link instantly',
+      desc: 'Your link is shortened right here, ready to copy and share. The result works immediately.',
+    },
+    {
+      n: '03',
+      icon: FiBarChart2,
+      title: 'Create a free account to track every click',
+      desc: 'Keep your links, watch analytics in real-time, protect them, and generate QR codes — free forever.',
     },
   ]
 
@@ -176,7 +241,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900 relative overflow-hidden">
+    <main className="min-h-screen bg-gradient-to-br from-gray-950 via-teal-950 to-gray-900 relative overflow-hidden">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -228,10 +293,15 @@ export default function Home() {
         }}
       />
 
+      {/* Header */}
+      <div className="relative z-20">
+        <MergedHeader />
+      </div>
+
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div
-          className="absolute w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-3xl animate-pulse"
+          className="absolute w-[500px] h-[500px] bg-teal-500/20 rounded-full blur-3xl animate-pulse"
           style={{
             left: `${mousePosition.x * 0.1}px`,
             top: `${mousePosition.y * 0.1}px`,
@@ -239,7 +309,7 @@ export default function Home() {
           }}
         />
         <div
-          className="absolute w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"
+          className="absolute w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000"
           style={{
             right: `${mousePosition.x * 0.05}px`,
             bottom: `${mousePosition.y * 0.05}px`,
@@ -257,7 +327,7 @@ export default function Home() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28">
+      <section id="shortener" className="relative z-10 w-full pt-24 md:pt-28 lg:pt-32 xl:pt-36 pb-16 md:pb-20 lg:pb-24 xl:pb-28 scroll-mt-8">
         <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -272,7 +342,7 @@ export default function Home() {
               className="inline-block mb-6"
             >
               <span className="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm border border-white/20">
-                100% free - No credit card required
+                100% free — No signup required to shorten
               </span>
             </motion.div>
 
@@ -284,7 +354,7 @@ export default function Home() {
             >
               <span className="text-white">Shorten Links.</span>
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-cyan-200 to-amber-300">
                 Track Everything.
               </span>
             </motion.h1>
@@ -295,8 +365,9 @@ export default function Home() {
               transition={{ delay: 0.4 }}
               className="text-xl text-white/80 mb-12 max-w-2xl mx-auto"
             >
-              A free URL shortener with real-time click analytics, QR codes,
-              password protection, and custom aliases. Privacy-friendly.
+              Paste a long link below and get a short one in seconds — no signup
+              needed. Create a free account to track every click, protect links,
+              and generate QR codes.
             </motion.p>
 
             {/* URL Shortener Box */}
@@ -304,26 +375,37 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="w-full"
+              className="w-full max-w-3xl mx-auto"
             >
-              <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-2 flex flex-col sm:flex-row gap-2">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleShorten()
+                }}
+                aria-label="Shorten a URL"
+                className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-2 flex flex-col sm:flex-row gap-2"
+              >
                 <input
                   type="url"
                   placeholder="https://your-long-url.com/..."
                   value={shortUrl}
-                  onChange={(e) => setShortUrl(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleShorten()}
-                  className="flex-1 bg-white/90 border-0 rounded-xl px-6 py-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  onChange={(e) => {
+                    setShortUrl(e.target.value)
+                    if (error) setError('')
+                    if (shortenedUrl) setShortenedUrl('')
+                  }}
+                  aria-label="URL to shorten"
+                  className="flex-1 bg-white/90 border-0 rounded-xl px-6 py-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-400 min-w-0"
                 />
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={handleShorten}
+                  type="submit"
                   disabled={isShortening}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:shadow-xl hover:shadow-purple-500/30 transition-all flex items-center justify-center group disabled:opacity-50"
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 text-gray-900 px-8 py-4 rounded-xl font-semibold hover:shadow-xl hover:shadow-amber-500/30 transition-all flex items-center justify-center group disabled:opacity-50"
                 >
                   {isShortening ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-b-transparent" />
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-900 border-b-transparent" />
                   ) : (
                     <>
                       Shorten URL
@@ -331,20 +413,100 @@ export default function Home() {
                     </>
                   )}
                 </motion.button>
+              </form>
+
+              {/* Trust row */}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/50">
+                <span className="flex items-center gap-1.5">
+                  <FiCheck className="w-4 h-4 text-emerald-400" /> Free forever
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <FiCheck className="w-4 h-4 text-emerald-400" /> No credit card required
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <FiCheck className="w-4 h-4 text-emerald-400" /> Real-time click tracking
+                </span>
               </div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  role="alert"
+                  className="mt-4 bg-red-500/15 border border-red-400/30 rounded-xl px-4 py-3 text-red-200 text-sm flex flex-wrap items-center justify-center gap-2"
+                >
+                  <span>{error}</span>
+                </motion.div>
+              )}
+
               {shortenedUrl && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-4 flex items-center justify-between"
+                  className="mt-6 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden text-left"
                 >
-                  <span className="text-white font-mono text-sm truncate">{shortenedUrl}</span>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(shortenedUrl) }}
-                    className="ml-4 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white text-sm font-medium transition-colors flex-shrink-0"
-                  >
-                    Copy
-                  </button>
+                  <div className="p-5 flex items-center justify-between gap-3 border-b border-white/10">
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
+                        Your short link
+                      </p>
+                      <a
+                        href={shortenedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white font-mono text-lg sm:text-xl truncate block hover:text-teal-300 transition-colors"
+                      >
+                        {shortenedUrl}
+                      </a>
+                    </div>
+                    <button
+                      onClick={handleCopy}
+                      className={`ml-4 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all flex-shrink-0 flex items-center gap-2 ${
+                        copied
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-white text-gray-900 hover:bg-white/90'
+                      }`}
+                    >
+                      {copied ? (
+                        <>
+                          <FiCheck className="w-4 h-4" /> Copied!
+                        </>
+                      ) : (
+                        'Copy'
+                      )}
+                    </button>
+                  </div>
+
+                  {isAnonymous ? (
+                    <div className="p-5 flex flex-col sm:flex-row sm:items-center gap-4 bg-gradient-to-r from-teal-600/20 via-cyan-600/20 to-amber-500/10">
+                      <p className="text-sm text-white/80 flex-1">
+                        <span className="font-semibold text-white">
+                          Want to keep this link and see every click?
+                        </span>{' '}
+                        Create a free account to manage your links, watch
+                        analytics in real-time, protect them with passwords, and
+                        get QR codes.
+                      </p>
+                      <Link
+                        href="/register"
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 text-gray-900 px-6 py-3 rounded-xl font-semibold hover:shadow-xl hover:shadow-amber-500/30 transition-all text-center"
+                      >
+                        Create Free Account
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="p-4 flex items-center justify-between gap-3">
+                      <p className="text-sm text-white/70">
+                        Saved to your account.
+                      </p>
+                      <Link
+                        href="/dashboard"
+                        className="text-sm text-teal-300 hover:text-white font-medium transition-colors"
+                      >
+                        Open dashboard →
+                      </Link>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </motion.div>
@@ -352,8 +514,51 @@ export default function Home() {
         </div>
       </section>
 
+      {/* How It Works Section */}
+      <section id="how" className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
+        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Get started in three steps
+            </h2>
+            <p className="text-xl text-white/60">
+              From long link to tracked link — in under a minute
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {steps.map((step, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.15 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
+                className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 text-left group"
+              >
+                <span className="absolute top-5 right-6 text-5xl font-bold text-white/5 group-hover:text-white/10 transition-colors select-none">
+                  {step.n}
+                </span>
+                <div className="w-14 h-14 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                  <step.icon className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">{step.title}</h3>
+                <p className="text-white/60 leading-relaxed">{step.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28">
+      <section id="features" className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
         <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -379,7 +584,7 @@ export default function Home() {
                 transition={{ delay: feature.delay }}
                 viewport={{ once: true }}
                 whileHover={{ y: -5, scale: 1.02 }}
-                className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 hover:shadow-2xl hover:shadow-purple-500/20 transition-all group"
+                className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 hover:shadow-2xl hover:shadow-teal-500/10 transition-all group"
               >
                 <div
                   className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform`}
@@ -395,7 +600,7 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28">
+      <section id="faq" className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
         <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -434,7 +639,7 @@ export default function Home() {
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 lg:p-16 text-center relative overflow-hidden"
+            className="bg-gradient-to-r from-teal-700 via-cyan-800 to-teal-900 rounded-3xl p-12 lg:p-16 text-center relative overflow-hidden"
           >
             <div className="absolute inset-0">
               <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
@@ -469,17 +674,23 @@ export default function Home() {
                     href="/dashboard"
                     className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold hover:shadow-2xl hover:shadow-white/20 transition-all flex items-center justify-center group"
                   >
-                    <FiStar className="mr-2 group-hover:rotate-180 transition-transform duration-500" />
                     Go to Dashboard
                   </Link>
                 ) : (
-                  <Link
-                    href="/register"
-                    className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold hover:shadow-2xl hover:shadow-white/20 transition-all flex items-center justify-center group"
-                  >
-                    <FiStar className="mr-2 group-hover:rotate-180 transition-transform duration-500" />
-                    Create Free Account
-                  </Link>
+                  <>
+                    <Link
+                      href="/register"
+                      className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold hover:shadow-2xl hover:shadow-white/20 transition-all flex items-center justify-center group"
+                    >
+                      Create Free Account
+                    </Link>
+                    <button
+                      onClick={scrollToShortener}
+                      className="bg-white/15 backdrop-blur-sm border border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/25 transition-all flex items-center justify-center group"
+                    >
+                      Shorten a link now
+                    </button>
+                  </>
                 )}
               </motion.div>
             </div>

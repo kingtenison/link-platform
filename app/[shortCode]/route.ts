@@ -12,10 +12,16 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;')
 }
 
-function generateVisitorId(): string {
-  const timestamp = Date.now().toString(36)
-  const random = Math.random().toString(36).substring(2, 10)
-  return `visitor_${timestamp}_${random}`
+// Stable, per-visitor-per-day identifier derived from IP + user agent.
+// Used to approximate unique visitors without storing raw identifiers.
+function generateVisitorId(ip: string, ua: string): string {
+  const day = new Date().toISOString().slice(0, 10)
+  const base = `${ip}::${ua}::${day}`
+  let hash = 0
+  for (let i = 0; i < base.length; i++) {
+    hash = (hash * 31 + base.charCodeAt(i)) >>> 0
+  }
+  return `visitor_${day.replace(/-/g, '')}_${hash.toString(36)}`
 }
 
 function parseUserAgent(ua: string | null): { device_type: string; browser: string; os: string } {
@@ -42,6 +48,103 @@ function parseUserAgent(ua: string | null): { device_type: string; browser: stri
   return { device_type, browser, os }
 }
 
+function passwordPage({
+  shortCode,
+  error,
+}: {
+  shortCode: string
+  error: boolean
+}): NextResponse {
+  const action = `/${escapeHtml(shortCode)}`
+  return new NextResponse(
+    `<!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <title>Password Protected Link</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        <style>
+          body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f766e 0%, #164e63 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: white;
+            padding: 1rem;
+            box-sizing: border-box;
+          }
+          .container {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          }
+          h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+          p { margin: 0 0 1.25rem; font-size: 0.9rem; opacity: 0.85; }
+          input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.75rem 1rem;
+            border-radius: 0.6rem;
+            border: none;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+          }
+          button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.6rem;
+            background: white;
+            color: #134e4a;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+          }
+          .error {
+            background: rgba(220, 38, 38, 0.85);
+            padding: 0.6rem 0.9rem;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+          }
+          label {
+            display: block;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 0.4rem;
+          }
+        </style>
+      </head>
+      <body>
+        <form class="container" method="get" action="${action}">
+          <h1>This link is password protected</h1>
+          <p>Enter the password to continue.</p>
+          ${error ? '<div class="error" role="alert">Incorrect password. Please try again.</div>' : ''}
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+          <button type="submit">Continue</button>
+        </form>
+      </body>
+    </html>`,
+    {
+      status: error ? 401 : 401,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-Robots-Tag': 'noindex, nofollow',
+        'Cache-Control': 'no-store',
+      },
+    }
+  )
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ shortCode: string }> }
@@ -50,6 +153,7 @@ export async function GET(
     const { shortCode } = await params
     const searchParams = request.nextUrl.searchParams
     const password = searchParams.get('password')
+    const errorParam = searchParams.get('error')
 
     if (!shortCode) {
       return new NextResponse('Short code is required', { status: 400 })
@@ -79,14 +183,11 @@ export async function GET(
 
     if (link.password_hash) {
       if (!password) {
-        return new NextResponse('Password required', { status: 401 })
+        return passwordPage({ shortCode, error: errorParam === 'invalid' })
       }
       const isValid = await bcrypt.compare(password, link.password_hash)
       if (!isValid) {
-        return new NextResponse(null, {
-          status: 302,
-          headers: { 'Location': `/${shortCode}?error=invalid` }
-        })
+        return passwordPage({ shortCode, error: true })
       }
     }
 
@@ -95,6 +196,7 @@ export async function GET(
     const referer = request.headers.get('referer') || 'direct'
     const refererDomain = referer !== 'direct' ? (() => { try { return new URL(referer).hostname } catch { return 'unknown' } })() : 'direct'
     const acceptLanguage = request.headers.get('accept-language')?.split(',')[0] || 'en-US'
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
 
     try {
       await supabase.from('click_analytics').insert([{
@@ -106,10 +208,10 @@ export async function GET(
         referer,
         referer_domain: refererDomain,
         clicked_at: new Date().toISOString(),
-        ip_address: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown',
+        ip_address: ip,
         user_agent: ua || 'unknown',
         success: true,
-        visitor_id: generateVisitorId(),
+        visitor_id: generateVisitorId(ip, ua || 'unknown'),
         language: acceptLanguage,
       }])
     } catch (e) {
@@ -134,15 +236,16 @@ export async function GET(
       const safeUrl = escapeHtml(link.original_url)
       return new NextResponse(
         `<!DOCTYPE html>
-        <html>
+        <html lang="en">
           <head>
             <title>Loading your link...</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="robots" content="noindex, nofollow">
             <style>
               body {
                 font-family: system-ui, -apple-system, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #0f766e 0%, #164e63 100%);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -175,7 +278,7 @@ export async function GET(
           </head>
           <body>
             <div class="container">
-              <h2>Preparing your link</h2>
+              <h1 style="font-size:1.5rem;margin:0 0 0.5rem;">Preparing your link</h1>
               <div class="loader"></div>
               <p>You'll be redirected in <span id="countdown">5</span> seconds</p>
               <p class="support">Thanks for supporting LinkPlatform!</p>
@@ -199,7 +302,11 @@ export async function GET(
         </html>`,
         {
           status: 200,
-          headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-Robots-Tag': 'noindex, nofollow',
+            'Cache-Control': 'no-store',
+          }
         }
       )
     }

@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface User {
+export interface User {
   id: string
   email: string
   name: string | null
@@ -50,8 +50,8 @@ export function useAuth() {
 
   useEffect(() => {
     mountedRef.current = true
-    fetchUser()
-    return () => { mountedRef.current = false }
+    const timer = setTimeout(() => { fetchUser() }, 0)
+    return () => { mountedRef.current = false; clearTimeout(timer) }
   }, [fetchUser])
 
   async function login(email: string, password: string) {

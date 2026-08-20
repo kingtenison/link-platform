@@ -1,32 +1,26 @@
 ﻿'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiMail, FiLock, FiArrowRight, FiBarChart2, FiLink, FiShield, FiZap, FiCheckCircle, FiEye, FiEyeOff } from 'react-icons/fi'
 import { useAuth } from '@/hooks/useAuth'
 
-export default function LoginPage() {
+function LoginContent() {
   const { login } = useAuth()
+  const searchParams = useSearchParams()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState(() =>
+    searchParams.get('registered') === 'true'
+      ? 'Account created successfully! Please sign in.'
+      : ''
+  )
   const [loading, setLoading] = useState(false)
-
-  // Read ?registered on the client only (avoids useSearchParams prerender error)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('registered') === 'true') {
-        setSuccessMessage('Account created successfully! Please sign in.')
-        // Clean the URL
-        window.history.replaceState({}, '', '/login')
-      }
-    }
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,7 +51,7 @@ export default function LoginPage() {
         <div className="lg:hidden mb-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 bg-clip-text text-transparent">L</span>
+              <span className="text-xl font-bold bg-gradient-to-br from-teal-500 to-cyan-500 bg-clip-text text-transparent">L</span>
             </div>
             <div className="text-left">
               <div className="font-bold text-2xl text-white tracking-tight">LinkPlatform</div>
@@ -76,7 +70,7 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 bg-clip-text text-transparent">L</span>
+                  <span className="text-2xl font-bold bg-gradient-to-br from-teal-500 to-cyan-500 bg-clip-text text-transparent">L</span>
                 </div>
                 <div>
                   <div className="font-bold text-2xl tracking-tight">LinkPlatform</div>
@@ -97,7 +91,7 @@ export default function LoginPage() {
                 return (
                   <div key={index} className="flex items-start gap-4 group">
                     <div className="mt-0.5 w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:bg-white/15 transition-colors">
-                      <Icon className="w-4.5 h-4.5" />
+                      <Icon className="w-5 h-5" />
                     </div>
                     <div className="text-white/95 text-[15px] leading-snug pt-1.5">{benefit.text}</div>
                   </div>
@@ -184,12 +178,6 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              <div className="flex justify-end -mt-1 mb-1">
-                <Link href="/forgot-password" className="text-xs text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
@@ -212,7 +200,7 @@ export default function LoginPage() {
             <div className="mt-7 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Don&apos;t have an account?{' '}
-                <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors">
+                <Link href="/register" className="font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 transition-colors">
                   Create one for free
                 </Link>
               </p>
@@ -243,6 +231,14 @@ export default function LoginPage() {
 
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   )
 }
 

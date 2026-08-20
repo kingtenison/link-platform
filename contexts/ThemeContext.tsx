@@ -18,24 +18,19 @@ function applyTheme(theme: Theme) {
   }
 }
 
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'light'
+  const savedTheme = localStorage.getItem('theme') as Theme | null
+  if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light')
-  const [mounted, setMounted] = useState(false)
+  const [theme, setTheme] = useState<Theme>(getInitialTheme)
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme | null
-    if (savedTheme) {
-      setTheme(savedTheme)
-      applyTheme(savedTheme)
-    } else {
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const defaultTheme = systemPrefersDark ? 'dark' : 'light'
-      setTheme(defaultTheme)
-      applyTheme(defaultTheme)
-      localStorage.setItem('theme', defaultTheme)
-    }
-    setMounted(true)
-  }, [])
+    applyTheme(theme)
+  }, [theme])
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light'
@@ -52,9 +47,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme: setThemePersistent }}>
-      <div style={{ visibility: mounted ? 'visible' : 'hidden' }}>
-        {children}
-      </div>
+      {children}
     </ThemeContext.Provider>
   )
 }

@@ -4,20 +4,20 @@ import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import type { ApiLink } from '@/lib/api'
 import { 
   FiLink, 
   FiCopy, 
   FiExternalLink, 
   FiSearch,
-  FiPlus,
   FiCode,
   FiBarChart2,
   FiTrash2,
   FiClock,
   FiEye,
   FiZap,
-  FiFilter
+  FiFilter,
+  FiEdit2
 } from 'react-icons/fi'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
 import CountUp from 'react-countup'
@@ -26,14 +26,13 @@ import toast from 'react-hot-toast'
 export default function LinksPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [links, setLinks] = useState<any[]>([])
-  const [filteredLinks, setFilteredLinks] = useState<any[]>([])
+  const [links, setLinks] = useState<ApiLink[]>([])
+  const [filteredLinks, setFilteredLinks] = useState<ApiLink[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>('newest')
   const [showFilters, setShowFilters] = useState(false)
   const [activeOnly, setActiveOnly] = useState(false)
-  const [withQrOnly, setWithQrOnly] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -47,7 +46,7 @@ export default function LinksPage() {
     }
   }, [user])
 
-  useEffect(() => {
+useEffect(() => {
     let filtered = [...links]
     
     if (searchTerm) {
@@ -72,19 +71,16 @@ export default function LinksPage() {
     })
     
     setFilteredLinks(filtered)
-  }, [searchTerm, links, sortBy, activeOnly, withQrOnly])
+  }, [searchTerm, links, sortBy, activeOnly])
 
   const fetchLinks = async () => {
     try {
-      const { data, error } = await supabase
-        .from('links')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setLinks(data || [])
-      setFilteredLinks(data || [])
+      const res = await fetch('/api/links')
+      if (!res.ok) throw new Error('Failed to load links')
+      const data = await res.json()
+      const fetched: ApiLink[] = data.links || []
+      setLinks(fetched)
+      setFilteredLinks(fetched)
     } catch (error) {
       console.error('Error fetching links:', error)
       toast.error('Failed to load links')
@@ -103,16 +99,15 @@ export default function LinksPage() {
     if (!confirm('Are you sure you want to delete this link?')) return
 
     try {
-      const { error } = await supabase
-        .from('links')
-        .delete()
-        .eq('id', id)
+      const res = await fetch(`/api/links/${id}`, { method: 'DELETE' })
 
-      if (error) throw error
+      if (!res.ok) {
+        throw new Error('Failed to delete link')
+      }
 
       setLinks(links.filter(l => l.id !== id))
       toast.success('Link deleted successfully')
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete link')
     }
   }
@@ -160,7 +155,7 @@ if (loading || isLoading) {
         className="space-y-12 sm:space-y-16 lg:space-y-20"
       >
       {/* Header with Stats */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8 text-white">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600 via-cyan-600 to-sky-600 p-8 text-white">
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -231,7 +226,7 @@ if (loading || isLoading) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowFilters(!showFilters)}
-              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300"
+              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600"
             >
               <FiFilter className="w-4 h-4 mr-2" />
               Filter
@@ -239,8 +234,8 @@ if (loading || isLoading) {
             
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 px-4 py-2"
+              onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'popular')}
+              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600 px-4 py-2"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -249,7 +244,7 @@ if (loading || isLoading) {
           </div>
         </div>
 
-        <AnimatePresence>
+<AnimatePresence>
           {showFilters && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
@@ -257,14 +252,12 @@ if (loading || isLoading) {
               exit={{ height: 0, opacity: 0 }}
               className="mt-4 pt-4 border-t border-gray-200"
             >
-              <div className="flex gap-4">
+              <fieldset className="flex gap-4">
+                <legend className="sr-only">Link filters</legend>
                 <label className="flex items-center text-gray-600">
                   <input type="checkbox" className="mr-2" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} /> Show active only
                 </label>
-                <label className="flex items-center text-gray-600">
-                  <input type="checkbox" className="mr-2" checked={withQrOnly} onChange={(e) => setWithQrOnly(e.target.checked)} /> With QR codes
-                </label>
-              </div>
+              </fieldset>
             </motion.div>
           )}
         </AnimatePresence>
@@ -279,9 +272,9 @@ if (loading || isLoading) {
               rotate: [0, 5, -5, 0]
             }}
             transition={{ duration: 4, repeat: Infinity }}
-            className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl flex items-center justify-center mb-6"
+            className="w-24 h-24 mx-auto bg-gradient-to-br from-teal-100 to-cyan-100 rounded-3xl flex items-center justify-center mb-6"
           >
-            <FiLink className="w-12 h-12 text-blue-600" />
+            <FiLink className="w-12 h-12 text-teal-600" />
           </motion.div>
           <h3 className="text-2xl font-bold text-gray-800 mb-2">
             {searchTerm ? 'No matches found' : 'No links yet'}
@@ -310,7 +303,7 @@ if (loading || isLoading) {
               whileHover={{ scale: 1.02, x: 5 }}
               className="group relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 to-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
               
               <div className="relative glass-card p-6 hover:shadow-xl transition-all">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -320,7 +313,7 @@ if (loading || isLoading) {
                       <motion.div 
                         whileHover={{ rotate: 360 }}
                         transition={{ duration: 0.5 }}
-                        className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0"
+                        className="w-10 h-10 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0"
                       >
                         <FiLink className="w-5 h-5 text-white" />
                       </motion.div>
@@ -330,11 +323,11 @@ if (loading || isLoading) {
                           <span className="text-lg font-semibold text-gray-800">
                             {link.short_code}
                           </span>
-                          <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full flex items-center">
+                          <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full flex items-center">
                             <FiEye className="w-3 h-3 mr-1" />
                             <CountUp end={link.clicks_count || 0} duration={1} /> clicks
                           </span>
-                          <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-cyan-100 text-cyan-700 px-2 py-1 rounded-full">
                             QR ready
                           </span>
                         </div>
@@ -345,7 +338,7 @@ if (loading || isLoading) {
                           </span>
                           <button
                             onClick={() => copyToClipboard(link.short_code)}
-                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            className="text-gray-400 hover:text-teal-600 transition-colors"
                           >
                             <FiCopy className="w-4 h-4" />
                           </button>
@@ -362,22 +355,36 @@ if (loading || isLoading) {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center space-x-2 lg:space-x-3">
-                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                  <div className="flex items-center gap-1.5 lg:gap-3 flex-wrap">
+<motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <button
                         onClick={() => copyToClipboard(link.short_code)}
-                        className="p-3 hover:bg-white rounded-xl transition-all group relative"
+                        className="p-2 sm:p-3 hover:bg-white rounded-xl transition-all group relative"
+                        aria-label={`Copy link ${link.short_code}`}
                       >
-                        <FiCopy className="w-5 h-5 text-gray-500 group-hover:text-blue-600" />
+                        <FiCopy className="w-5 h-5 text-gray-500 group-hover:text-teal-600" />
                       </button>
+                    </motion.div>
+
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <Link
+                        href={`/dashboard/links/new?edit=${link.id}`}
+                        className="p-2 sm:p-3 hover:bg-white rounded-xl transition-all group relative"
+                        aria-label={`Edit link ${link.short_code}`}
+                      >
+                        <FiEdit2 className="w-5 h-5 text-gray-500 group-hover:text-yellow-600" />
+                      </Link>
+                    </motion.div>
                     </motion.div>
 
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <Link
                         href={`/dashboard/qrcodes?link=${link.id}`}
-                        className="p-3 hover:bg-white rounded-xl transition-all group relative"
+                        className="p-2 sm:p-3 hover:bg-white rounded-xl transition-all group relative"
+                        aria-label={`QR code for ${link.short_code}`}
                       >
-                        <FiCode className="w-5 h-5 text-gray-500 group-hover:text-purple-600" />
+                        <FiCode className="w-5 h-5 text-gray-500 group-hover:text-cyan-600" />
                       </Link>
                     </motion.div>
 
@@ -385,7 +392,9 @@ if (loading || isLoading) {
                       <a
                         href={`/${link.short_code}`}
                         target="_blank"
-                        className="p-3 hover:bg-white rounded-xl transition-all group relative"
+                        rel="noopener noreferrer"
+                        className="p-2 sm:p-3 hover:bg-white rounded-xl transition-all group relative"
+                        aria-label={`Open ${link.short_code} in new tab`}
                       >
                         <FiExternalLink className="w-5 h-5 text-gray-500 group-hover:text-green-600" />
                       </a>
@@ -394,7 +403,8 @@ if (loading || isLoading) {
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <Link
                         href={`/dashboard/analytics?link=${link.id}`}
-                        className="p-3 hover:bg-white rounded-xl transition-all group relative"
+                        className="p-2 sm:p-3 hover:bg-white rounded-xl transition-all group relative"
+                        aria-label={`Analytics for ${link.short_code}`}
                       >
                         <FiBarChart2 className="w-5 h-5 text-gray-500 group-hover:text-orange-600" />
                       </Link>
@@ -403,7 +413,8 @@ if (loading || isLoading) {
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <button
                         onClick={() => deleteLink(link.id)}
-                        className="p-3 hover:bg-white rounded-xl transition-all group relative"
+                        className="p-2 sm:p-3 hover:bg-white rounded-xl transition-all group relative"
+                        aria-label={`Delete link ${link.short_code}`}
                       >
                         <FiTrash2 className="w-5 h-5 text-gray-500 group-hover:text-red-600" />
                       </button>
@@ -414,7 +425,7 @@ if (loading || isLoading) {
                 {/* Progress bar for clicks */}
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100">
                   <motion.div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
+                    className="h-full bg-gradient-to-r from-teal-400 to-cyan-500"
                     initial={{ width: '0%' }}
                     animate={{ width: `${Math.min((link.clicks_count / Math.max(...links.map(l => l.clicks_count || 1), 1)) * 100, 100)}%` }}
                     transition={{ duration: 1, delay: index * 0.1 }}

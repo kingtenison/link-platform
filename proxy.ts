@@ -44,7 +44,6 @@ const PUBLIC_PATHS = [
   '/',
   '/login',
   '/register',
-  '/forgot-password',
   '/sitemap.xml',
   '/robots.txt',
   '/llms.txt',
@@ -53,19 +52,18 @@ const PUBLIC_PATHS = [
   '/api/auth/register',
   '/api/auth/logout',
   '/api/auth/me',
+  '/api/links/shorten',
 ]
 
 const DEBUG_PATHS = [
   '/debug',
-  '/raw-data',
   '/test-analytics',
-  '/api/debug',
 ]
 
 const PROTECTED_PREFIXES = [
   '/dashboard',
   '/api/links',
-  '/api/debug',
+  '/api/analytics',
 ]
 
 function isPublicPath(pathname: string): boolean {
@@ -115,6 +113,42 @@ export async function proxy(request: NextRequest) {
 
   if (isPublicPath(pathname)) {
     return NextResponse.next()
+  }
+
+  // CSRF defense-in-depth: for state-changing non-GET API calls, reject
+  // requests whose Origin/Referer host does not match this deployment.
+  if (
+    request.method !== 'GET' &&
+    request.method !== 'HEAD' &&
+    pathname.startsWith('/api/')
+  ) {
+    const host = request.headers.get('host')
+    const origin = request.headers.get('origin')
+    const referer = request.headers.get('referer')
+
+    if (host) {
+      if (origin) {
+        let originHost = ''
+        try {
+          originHost = new URL(origin).host
+        } catch {
+          return new NextResponse('Invalid Origin', { status: 403 })
+        }
+        if (originHost !== host) {
+          return new NextResponse('Cross-site request rejected', { status: 403 })
+        }
+      } else if (referer) {
+        let refererHost = ''
+        try {
+          refererHost = new URL(referer).host
+        } catch {
+          return new NextResponse('Invalid Referer', { status: 403 })
+        }
+        if (refererHost !== host) {
+          return new NextResponse('Cross-site request rejected', { status: 403 })
+        }
+      }
+    }
   }
 
   if (!isProtectedPath(pathname)) {

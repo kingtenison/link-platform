@@ -1,15 +1,20 @@
-﻿// Mock for nanoid
-const mockGenerate = jest.fn().mockImplementation(() => {
-  // Return a consistent 6-character string for testing
-  return 'abc123'
-})
+﻿// Mock for nanoid (ESM-only in v5, Jest uses this via jest.mock('nanoid'))
+const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
-const customAlphabet = jest.fn().mockImplementation(() => mockGenerate)
-const nanoid = mockGenerate
+const generate = (size = 21) => {
+  const bytes = []
+  for (let i = 0; i < size; i++) {
+    bytes.push(ALPHABET[Math.floor(Math.random() * ALPHABET.length)])
+  }
+  return bytes.join('')
+}
 
-module.exports = { 
+const customAlphabet = jest.fn((alphabet, size) => () => generate(size))
+const nanoid = jest.fn(() => generate())
+
+module.exports = {
   nanoid,
   customAlphabet,
   __esModule: true,
-  default: nanoid
+  default: nanoid,
 }

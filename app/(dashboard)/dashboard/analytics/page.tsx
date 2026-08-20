@@ -1,28 +1,18 @@
 ﻿'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import Link from 'next/link'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import type { ApiLink, ApiClick } from '@/lib/api'
 import { 
-  FiBarChart2, 
   FiTrendingUp, 
-  FiCalendar, 
-  FiDownload,
   FiRefreshCw,
-  FiMapPin,
-  FiMonitor,
   FiMousePointer,
-  FiLink,
-  FiArrowLeft,
   FiEye
 } from 'react-icons/fi'
 import { motion } from 'framer-motion'
-import { PageWrapper, AnimatedCard, itemVariants, buttonVariants } from '@/components/ui/animations'
+import { PageWrapper, AnimatedCard, buttonVariants } from '@/components/ui/animations'
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -37,21 +27,22 @@ import {
 } from 'recharts'
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
-import { format, subDays, subMonths, eachDayOfInterval } from 'date-fns'
+import { format } from 'date-fns'
 
 // Create a separate component for the analytics content that uses useSearchParams
 function AnalyticsContent() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [links, setLinks] = useState<any[]>([])
-  const [clicks, setClicks] = useState<any[]>([])
+  const [links, setLinks] = useState<ApiLink[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('all')
-  const [selectedLink, setSelectedLink] = useState<string>('all')
-  const [chartData, setChartData] = useState<any[]>([])
-  const [deviceData, setDeviceData] = useState<any[]>([])
-  const [locationData, setLocationData] = useState<any[]>([])
+  const [selectedLink, setSelectedLink] = useState<string>(
+    () => searchParams.get('link') ?? 'all'
+  )
+  const [chartData, setChartData] = useState<{ date: string; clicks: number }[]>([])
+  const [deviceData, setDeviceData] = useState<{ name: string; value: number }[]>([])
+  const [locationData, setLocationData] = useState<{ name: string; value: number }[]>([])
   const [stats, setStats] = useState({
     totalClicks: 0,
     uniqueVisitors: 0,
@@ -68,70 +59,25 @@ function AnalyticsContent() {
     if (user) {
       fetchData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, dateRange, selectedLink])
-
-  // Check for link ID in URL params
-  useEffect(() => {
-    const linkId = searchParams.get('link')
-    if (linkId) {
-      setSelectedLink(linkId)
-    }
-  }, [searchParams])
 
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      // Fetch user's links
-      const { data: linksData, error: linksError } = await supabase
-        .from('links')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
+      const params = new URLSearchParams()
+      params.set('linkId', selectedLink)
+      params.set('range', dateRange)
 
-      if (linksError) throw linksError
-      setLinks(linksData || [])
+      const res = await fetch(`/api/analytics?${params.toString()}`)
+      if (!res.ok) throw new Error('Failed to load analytics')
 
-      // Build query for clicks
-      let query = supabase
-        .from('click_analytics')
-        .select(`
-          *,
-          links (
-            short_code,
-            original_url
-          )
-        `)
-        .eq('user_id', user?.id)
-        .order('clicked_at', { ascending: false })
+      const data = await res.json()
+      const linksData: ApiLink[] = data.links || []
+      const clicksData: ApiClick[] = data.clicks || []
 
-      if (selectedLink !== 'all') {
-        query = query.eq('link_id', selectedLink)
-      }
-
-      if (dateRange !== 'all') {
-        const now = new Date()
-        let startDate
-        switch (dateRange) {
-          case '7d':
-            startDate = subDays(now, 7)
-            break
-          case '30d':
-            startDate = subDays(now, 30)
-            break
-          case '90d':
-            startDate = subDays(now, 90)
-            break
-        }
-        query = query.gte('clicked_at', startDate.toISOString())
-      }
-
-      const { data: clicksData, error: clicksError } = await query
-
-      if (clicksError) throw clicksError
-      
-      setClicks(clicksData || [])
-      processData(clicksData || [])
-      
+      setLinks(linksData)
+      processData(clicksData)
     } catch (error) {
       console.error('Error fetching analytics:', error)
       toast.error('Failed to load analytics data')
@@ -140,16 +86,18 @@ function AnalyticsContent() {
     }
   }
 
-  const processData = (clicks: any[]) => {
-    const devices = clicks.reduce((acc: any, click) => {
+  const processData = (clicks: ApiClick[]) => {
+    const devices = clicks.reduce((acc: Record<string, number>, click) => {
       const device = click.device_type || 'Unknown'
       acc[device] = (acc[device] || 0) + 1
       return acc
     }, {})
     setDeviceData(Object.entries(devices).map(([name, value]) => ({ name, value })))
 
-    const locations = clicks.reduce((acc: any, click) => {
-      const country = click.country || 'Unknown'
+    // Only show real locations; filter out rows where geo data never resolved
+    const locations = clicks.reduce((acc: Record<string, number>, click) => {
+      const country = click.country
+      if (!country || country === 'Unknown' || country === 'unknown') return acc
       acc[country] = (acc[country] || 0) + 1
       return acc
     }, {})
@@ -171,7 +119,7 @@ function AnalyticsContent() {
 
     const clicksByDate: Record<string, { date: string; clicks: number; sortKey: string }> = {}
 
-    clicks.forEach((click: any) => {
+    clicks.forEach((click) => {
       const dateKey = format(new Date(click.clicked_at), 'yyyy-MM-dd')
       const dateLabel = format(new Date(click.clicked_at), 'MMM dd')
       if (!clicksByDate[dateKey]) clicksByDate[dateKey] = { date: dateLabel, clicks: 0, sortKey: dateKey }
@@ -185,7 +133,7 @@ function AnalyticsContent() {
     setChartData(chart)
   }
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+  const COLORS = ['#14B8A6', '#10B981', '#F59E0B', '#EF4444', '#0EA5E9']
 
   if (loading || isLoading) {
     return (
@@ -200,10 +148,11 @@ function AnalyticsContent() {
   }
 
   return (
-    <div className="dashboard-container pt-16 sm:pt-20">
+    <div className="dashboard-container">
       <PageWrapper>
+        <h1 className="sr-only">Analytics Dashboard</h1>
         {/* Header */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8 lg:p-10 text-white">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-600 via-cyan-600 to-sky-600 p-8 lg:p-10 text-white">
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -234,7 +183,7 @@ function AnalyticsContent() {
 
           {/* Filters */}
           <div className="flex flex-wrap gap-4 mt-6">
-            <select
+<select
               value={selectedLink}
               onChange={(e) => setSelectedLink(e.target.value)}
               className="bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-lg px-4 py-2 text-sm"
@@ -247,9 +196,9 @@ function AnalyticsContent() {
               ))}
             </select>
 
-            <select
+<select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as any)}
+              onChange={(e) => setDateRange(e.target.value as '7d' | '30d' | '90d' | 'all')}
               className="bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-lg px-4 py-2 text-sm"
             >
               <option value="all">All Time</option>
@@ -265,8 +214,8 @@ function AnalyticsContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
         <AnimatedCard className="p-8">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <FiMousePointer className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
+              <FiMousePointer className="w-6 h-6 text-teal-600" />
             </div>
             <span className="text-2xl font-bold text-gray-800">
               <CountUp end={stats.totalClicks} duration={2} />
@@ -277,8 +226,8 @@ function AnalyticsContent() {
 
         <AnimatedCard className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-              <FiEye className="w-6 h-6 text-purple-600" />
+<div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center">
+              <FiEye className="w-6 h-6 text-cyan-700" />
             </div>
             <span className="text-2xl font-bold text-gray-800">
               <CountUp end={stats.uniqueVisitors} duration={2} />
@@ -310,7 +259,7 @@ function AnalyticsContent() {
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="clicks" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="clicks" fill="#14B8A6" radius={[4, 4, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
@@ -359,7 +308,7 @@ function AnalyticsContent() {
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={100} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#3B82F6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="value" fill="#14B8A6" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

@@ -41,16 +41,17 @@ export async function POST(request: Request) {
         name: user.name
       }
     })
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; code?: string; details?: string; hint?: string }
     console.error('Register error details:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint
+      message: err.message,
+      code: err.code,
+      details: err.details,
+      hint: err.hint
     })
     
     return NextResponse.json(
-      { error: error.message || 'Failed to create account' },
+      { error: err.message || 'Failed to create account' },
       { status: 500 }
     )
   }

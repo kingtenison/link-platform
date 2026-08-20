@@ -47,7 +47,7 @@ export default function RegisterPage() {
         <div className="lg:hidden mb-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 bg-clip-text text-transparent">L</span>
+              <span className="text-xl font-bold bg-gradient-to-br from-teal-500 to-cyan-500 bg-clip-text text-transparent">L</span>
             </div>
             <div className="text-left">
               <div className="font-bold text-2xl text-white tracking-tight">LinkPlatform</div>
@@ -66,7 +66,7 @@ export default function RegisterPage() {
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 bg-clip-text text-transparent">L</span>
+                  <span className="text-2xl font-bold bg-gradient-to-br from-teal-500 to-cyan-500 bg-clip-text text-transparent">L</span>
                 </div>
                 <div>
                   <div className="font-bold text-2xl tracking-tight">LinkPlatform</div>
@@ -87,7 +87,7 @@ export default function RegisterPage() {
                 return (
                   <div key={index} className="flex items-start gap-4 group">
                     <div className="mt-0.5 w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:bg-white/15 transition-colors">
-                      <Icon className="w-4.5 h-4.5" />
+                      <Icon className="w-5 h-5" />
                     </div>
                     <div className="text-white/95 text-[15px] leading-snug pt-1.5">{benefit.text}</div>
                   </div>
@@ -203,7 +203,7 @@ export default function RegisterPage() {
             <div className="mt-7 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Already have an account?{' '}
-                <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors">
+                <Link href="/login" className="font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 transition-colors">
                   Sign in instead
                 </Link>
               </p>

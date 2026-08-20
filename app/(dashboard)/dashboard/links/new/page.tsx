@@ -1,7 +1,7 @@
 ﻿'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { 
   FiLink, 
@@ -20,11 +20,22 @@ import {
 } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
+import type { ApiLink } from '@/lib/api'
 import toast from 'react-hot-toast'
 
-export default function NewLinkPage() {
-  const { user } = useAuth()
+function toLocalInputValue(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function NewLinkContent() {
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const editingId = searchParams.get('edit')
+
   const [url, setUrl] = useState('')
   const [customAlias, setCustomAlias] = useState('')
   const [password, setPassword] = useState('')
@@ -39,13 +50,48 @@ export default function NewLinkPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login')
+    }
+  }, [user, authLoading, router])
+
+  // Load link when editing
+  useEffect(() => {
+    let cancelled = false
+    if (editingId && user) {
+      fetch(`/api/links/${editingId}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (cancelled || !data?.link) return
+          const link: ApiLink = data.link
+          setUrl(link.original_url)
+          setCustomAlias(link.short_code)
+          setMaxClicks(link.max_clicks != null ? String(link.max_clicks) : '')
+          setExpiresAt(link.expires_at ? toLocalInputValue(link.expires_at) : '')
+          setScheduledAt(link.scheduled_at ? toLocalInputValue(link.scheduled_at) : '')
+          if (link.timezone) setTimezone(link.timezone)
+        })
+        .catch(() => {
+          toast.error('Failed to load link')
+        })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [editingId, user])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const response = await fetch('/api/links/shorten', {
-        method: 'POST',
+      const method = editingId ? 'PATCH' : 'POST'
+      const endpoint = editingId ? `/api/links/${editingId}` : '/api/links/shorten'
+
+      const response = await fetch(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           url, 
@@ -61,7 +107,14 @@ export default function NewLinkPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create link')
+        throw new Error(data.error || 'Failed to save link')
+      }
+
+      if (editingId) {
+        toast.success('Link updated successfully!')
+        router.push('/dashboard/links')
+        router.refresh()
+        return
       }
 
       setShortUrl(data.shortUrl)
@@ -72,8 +125,8 @@ export default function NewLinkPage() {
       if (data.protection && data.protection.length > 0) {
         toast.success(`Protected with: ${data.protection.join(', ')}`)
       }
-    } catch (error: any) {
-      toast.error(error.message)
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save link')
     } finally {
       setLoading(false)
     }
@@ -98,7 +151,7 @@ export default function NewLinkPage() {
 
   if (created) {
     return (
-      <div className="w-full">
+      <div className="dashboard-container">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -113,16 +166,16 @@ export default function NewLinkPage() {
             <FiCheck className="w-10 h-10 text-white" />
           </motion.div>
           
-          <h2 className="text-3xl font-bold gradient-text mb-2">Link Created!</h2>
+          <h1 className="text-3xl font-bold gradient-text mb-2">Link Created!</h1>
           <p className="text-gray-600 mb-6">Your protected link is ready to use</p>
 
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <input
                 type="text"
                 value={shortUrl}
                 readOnly
-                className="flex-1 bg-transparent text-gray-600 outline-none"
+                className="w-full min-w-0 flex-1 bg-transparent text-gray-600 outline-none"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -145,12 +198,12 @@ export default function NewLinkPage() {
             </div>
           </div>
 
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={createAnother}
-              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300"
+              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600"
             >
               Create Another
             </motion.button>
@@ -169,7 +222,7 @@ export default function NewLinkPage() {
   }
 
   return (
-    <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-16 sm:pt-20">
+    <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
       <Link href="/dashboard/links" className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-8 group">
         <FiArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
         Back to Links
@@ -180,29 +233,35 @@ export default function NewLinkPage() {
         animate={{ y: 0, opacity: 1 }}
         className="glass-card p-8"
       >
-        <h1 className="text-3xl font-bold gradient-text mb-2">Create Protected Link</h1>
-        <p className="text-gray-600 mb-6">Add security and control to your shortened links</p>
+        <h1 className="text-3xl font-bold gradient-text mb-2">
+          {editingId ? 'Edit Link' : 'Create Protected Link'}
+        </h1>
+        <p className="text-gray-600 mb-6">
+          {editingId
+            ? 'Update the security and control settings for this link'
+            : 'Add security and control to your shortened links'}
+        </p>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-200">
+        <div className="flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto">
           <button
             onClick={() => setActiveTab('basic')}
             className={`px-4 py-2 font-medium transition-colors relative ${
-              activeTab === 'basic' ? 'text-blue-600' : 'text-gray-600 hover:text-gray-800'
+              activeTab === 'basic' ? 'text-teal-600' : 'text-gray-600 hover:text-gray-800'
             }`}
           >
             Basic Info
             {activeTab === 'basic' && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600"
               />
             )}
           </button>
           <button
             onClick={() => setActiveTab('protection')}
             className={`px-4 py-2 font-medium transition-colors relative ${
-              activeTab === 'protection' ? 'text-blue-600' : 'text-gray-600 hover:text-gray-800'
+              activeTab === 'protection' ? 'text-teal-600' : 'text-gray-600 hover:text-gray-800'
             }`}
           >
             <FiShield className="inline w-4 h-4 mr-1" />
@@ -210,14 +269,14 @@ export default function NewLinkPage() {
             {activeTab === 'protection' && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600"
               />
             )}
           </button>
           <button
             onClick={() => setActiveTab('schedule')}
             className={`px-4 py-2 font-medium transition-colors relative ${
-              activeTab === 'schedule' ? 'text-blue-600' : 'text-gray-600 hover:text-gray-800'
+              activeTab === 'schedule' ? 'text-teal-600' : 'text-gray-600 hover:text-gray-800'
             }`}
           >
             <FiClock className="inline w-4 h-4 mr-1" />
@@ -225,7 +284,7 @@ export default function NewLinkPage() {
             {activeTab === 'schedule' && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600"
               />
             )}
           </button>
@@ -265,7 +324,7 @@ export default function NewLinkPage() {
                     Custom Alias (optional)
                   </label>
                   <div className="flex items-center">
-                    <span className="text-gray-500 mr-2 bg-gray-100 px-3 py-2 rounded-l-lg border border-r-0 border-gray-300 text-sm">
+                    <span className="text-gray-500 mr-2 bg-gray-100 px-3 py-2 rounded-l-lg border border-r-0 border-gray-300 text-sm truncate max-w-[45%]">
                       {typeof window !== 'undefined' ? window.location.origin : ''}/
                     </span>
                     <input
@@ -273,7 +332,7 @@ export default function NewLinkPage() {
                       value={customAlias}
                       onChange={(e) => setCustomAlias(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
                       placeholder="my-custom-link"
-                      className="input-white rounded-l-none"
+                      className="input-white rounded-l-none min-w-0 flex-1"
                       disabled={loading}
                     />
                   </div>
@@ -292,21 +351,22 @@ export default function NewLinkPage() {
                 className="space-y-6"
               >
                 {/* Password Protection */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4">
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
                       <FiLock className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="link-password">
                         Password Protection
                       </label>
                       <div className="relative">
                         <input
+                          id="link-password"
                           type={showPassword ? 'text' : 'password'}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Set password to protect this link"
+                          placeholder={editingId ? 'Leave empty to keep current password' : 'Set password to protect this link'}
                           className="input-white pr-10"
                           disabled={loading}
                         />
@@ -314,6 +374,7 @@ export default function NewLinkPage() {
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
                           {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
                         </button>
@@ -324,16 +385,17 @@ export default function NewLinkPage() {
                 </div>
 
                 {/* Max Clicks */}
-                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
+                <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center flex-shrink-0">
                       <FiZap className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="link-max-clicks">
                         Maximum Clicks
                       </label>
                       <input
+                        id="link-max-clicks"
                         type="number"
                         value={maxClicks}
                         onChange={(e) => setMaxClicks(e.target.value)}
@@ -354,10 +416,11 @@ export default function NewLinkPage() {
                       <FiCalendar className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="link-expires">
                         Expiration Date
                       </label>
                       <input
+                        id="link-expires"
                         type="datetime-local"
                         value={expiresAt}
                         onChange={(e) => setExpiresAt(e.target.value)}
@@ -386,10 +449,11 @@ export default function NewLinkPage() {
                       <FiClock className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="link-schedule">
                         Schedule Link Activation
                       </label>
                       <input
+                        id="link-schedule"
                         type="datetime-local"
                         value={scheduledAt}
                         onChange={(e) => setScheduledAt(e.target.value)}
@@ -425,9 +489,9 @@ export default function NewLinkPage() {
                 </div>
 
                 {scheduledAt && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-                    <FiAlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-blue-800">
+                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 flex items-start gap-2">
+                    <FiAlertCircle className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-teal-800">
                       This link will be inactive until {new Date(scheduledAt).toLocaleString()}. 
                       It will automatically start working at the scheduled time.
                     </p>
@@ -448,12 +512,12 @@ export default function NewLinkPage() {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-800 mr-2"></div>
-                Creating Protected Link...
+                {editingId ? 'Saving Changes...' : 'Creating Protected Link...'}
               </>
             ) : (
               <>
                 <FiShield className="w-5 h-5 mr-2" />
-                Create Protected Link
+                {editingId ? 'Save Changes' : 'Create Protected Link'}
               </>
             )}
           </motion.button>
@@ -478,5 +542,13 @@ export default function NewLinkPage() {
         )}
       </motion.div>
     </div>
+  )
+}
+
+export default function NewLinkPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewLinkContent />
+    </Suspense>
   )
 }
