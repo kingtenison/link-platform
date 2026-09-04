@@ -59,8 +59,13 @@ export async function POST(request: Request) {
       }
     }
 
+    // Check if email confirmation is required
+    const emailConfirmed = data.user?.email_confirmed_at != null
+
     return NextResponse.json({
-      message: 'User created successfully',
+      message: emailConfirmed
+        ? 'User created successfully'
+        : 'Account created. Please check your email to confirm your account.',
       user: data.user
         ? {
             id: data.user.id,
@@ -68,6 +73,7 @@ export async function POST(request: Request) {
             name,
           }
         : null,
+      confirmation_required: !emailConfirmed,
     })
   } catch (error) {
     const err = error as { message?: string }
