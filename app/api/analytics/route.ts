@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { getUserId, unauthorized } from '@/lib/api'
+import { supabase } from '@/lib/supabase/service'
+import { getUserId, unauthorized, toSafeLink, CLICK_SAFE_COLUMNS } from '@/lib/api'
 import { subDays } from 'date-fns'
 
 export async function GET(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   // Build clicks query scoped to the user's own clicks
   let query = supabase
     .from('click_analytics')
-    .select('*')
+    .select(CLICK_SAFE_COLUMNS)
     .eq('user_id', userId)
     .order('clicked_at', { ascending: false })
 
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({
-    links: linksData || [],
+    links: (linksData || []).map((link) => toSafeLink(link as Record<string, unknown>)),
     clicks: clicksData || [],
   })
 }

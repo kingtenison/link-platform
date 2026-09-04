@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { getUserId, unauthorized } from '@/lib/api'
+import { supabase } from '@/lib/supabase/service'
+import { getUserId, unauthorized, toSafeLink } from '@/lib/api'
 
 export async function GET(request: NextRequest) {
   const userId = getUserId(request)
@@ -17,5 +17,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to load links' }, { status: 500 })
   }
 
-  return NextResponse.json({ links: data || [] })
+  return NextResponse.json({
+    links: (data || []).map((link) => toSafeLink(link as Record<string, unknown>)),
+  })
 }

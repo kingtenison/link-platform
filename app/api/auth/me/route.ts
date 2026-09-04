@@ -1,38 +1,24 @@
 ﻿import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyToken, getUserById } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('token')?.value
-    
-    if (!token) {
-      return NextResponse.json({ user: null })
-    }
+    const supabase = await createClient()
 
-    const userId = await verifyToken(token)
-    
-    if (!userId) {
-      const response = NextResponse.json({ user: null })
-      response.cookies.set('token', '', { maxAge: 0, path: '/' })
-      return response
-    }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const user = await getUserById(userId)
-    
     if (!user) {
-      const response = NextResponse.json({ user: null })
-      response.cookies.set('token', '', { maxAge: 0, path: '/' })
-      return response
+      return NextResponse.json({ user: null })
     }
 
     return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
-      }
+        name: user.user_metadata?.name || null,
+      },
     })
   } catch (error) {
     console.error('Me API error:', error)

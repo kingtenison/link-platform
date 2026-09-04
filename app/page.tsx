@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import MergedHeader from '@/components/layout/MergedHeader'
+import Footer from '@/components/layout/Footer'
 
 const FAQ = [
   {
@@ -234,8 +235,12 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white" />
+      <div className="min-h-screen gradient-bg flex flex-col">
+        <MergedHeader />
+        <main id="main" className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white" />
+        </main>
+        <Footer />
       </div>
     )
   }
@@ -697,6 +702,9 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </main>
   )
 }

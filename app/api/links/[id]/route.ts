@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { getUserId, unauthorized, notFound, badRequest } from '@/lib/api'
+import { supabase } from '@/lib/supabase/service'
+import { getUserId, unauthorized, notFound, badRequest, toSafeLink } from '@/lib/api'
 import { ensureProtocol, validateUrl, generateShortCode } from '@/utils/shortener'
 import bcrypt from 'bcryptjs'
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     .maybeSingle()
 
   if (error || !link) return notFound('Link not found')
-  return NextResponse.json({ link })
+  return NextResponse.json({ link: toSafeLink(link as Record<string, unknown>) })
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
@@ -79,8 +79,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   if (typeof body.customAlias === 'string' && body.customAlias.trim() !== '') {
-    const alias = body.customAlias.replace(/[^a-zA-Z0-9]/g, '')
-    if (alias && alias !== link.short_code) {
+    const alias = body.customAlias.trim()
+    if (!/^[a-zA-Z0-9]+$/.test(alias)) {
+      return badRequest('Custom alias can only contain letters and numbers')
+    }
+    if (alias !== link.short_code) {
       const { data: existing } = await supabase
         .from('links')
         .select('short_code')
@@ -94,8 +97,16 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   if (typeof body.password === 'string' && body.password.trim() !== '') {
+    if (body.password.length > 72) return badRequest('Password must be 72 characters or fewer')
     updates.password_hash = await bcrypt.hash(body.password, 10)
     protectionTypes.add('password')
+  } else if (body.password === null || body.password === '') {
+    updates.password_hash = null
+    protectionTypes.delete('password')
+  }
+
+  if (typeof body.monetize === 'boolean') {
+    updates.monetize = body.monetize
   }
 
   if (typeof body.expiresAt === 'string' && body.expiresAt) {
@@ -124,7 +135,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     updates.is_active = false
   } else if (body.scheduledAt === null || body.scheduledAt === '') {
     updates.scheduled_at = null
+    updates.timezone = null
     protectionTypes.delete('scheduled')
+    // Clearing the schedule reactivates the link unless the caller says otherwise.
+    if (typeof body.isActive !== 'boolean') {
+      updates.is_active = true
+    }
   }
 
   if (typeof body.isActive === 'boolean') {
@@ -150,5 +166,5 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: 'Failed to update link' }, { status: 500 })
   }
 
-  return NextResponse.json({ link: updated })
+  return NextResponse.json({ link: toSafeLink(updated as Record<string, unknown>) })
 }

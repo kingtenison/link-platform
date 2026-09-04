@@ -19,9 +19,11 @@ import {
   FiFilter,
   FiEdit2
 } from 'react-icons/fi'
-import { motion, AnimatePresence, Variants } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { pageVariants, itemVariants } from '@/components/ui/animations'
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
+import PageTitle from '@/components/ui/PageTitle'
 
 export default function LinksPage() {
   const { user, loading } = useAuth()
@@ -116,24 +118,6 @@ useEffect(() => {
   const averageClicks = links.length ? (totalClicks / links.length).toFixed(1) : 0
   const topLink = links.length ? Math.max(...links.map(l => l.clicks_count || 0)) : 0
 
-  const pageVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-}
-
-const itemVariants: Variants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { 
-    y: 0, 
-    opacity: 1
-  }
-}
-
 if (loading || isLoading) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
@@ -148,6 +132,7 @@ if (loading || isLoading) {
 
   return (
     <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-16 sm:pt-20">
+      <PageTitle title="My Links" />
       <motion.div
         variants={pageVariants}
         initial="hidden"
@@ -254,8 +239,8 @@ if (loading || isLoading) {
             >
               <fieldset className="flex gap-4">
                 <legend className="sr-only">Link filters</legend>
-                <label className="flex items-center text-gray-600">
-                  <input type="checkbox" className="mr-2" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} /> Show active only
+                <label className="flex items-center text-gray-600 cursor-pointer">
+                  <input id="active-only" type="checkbox" className="mr-2 rounded" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} /> Show active only
                 </label>
               </fieldset>
             </motion.div>
@@ -276,10 +261,10 @@ if (loading || isLoading) {
           >
             <FiLink className="w-12 h-12 text-teal-600" />
           </motion.div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
             {searchTerm ? 'No matches found' : 'No links yet'}
           </h3>
-          <p className="text-gray-500 mb-8 max-w-md mx-auto">
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
             {searchTerm 
               ? `No links match "${searchTerm}". Try a different search term.`
               : 'Create your first link and start tracking your audience today!'}
@@ -319,21 +304,21 @@ if (loading || isLoading) {
                       </motion.div>
                       
                       <div>
-                        <div className="flex items-center flex-wrap gap-2">
-                          <span className="text-lg font-semibold text-gray-800">
+                      <div className="flex items-center flex-wrap gap-2">
+                          <span className="text-lg font-semibold text-gray-800 dark:text-white">
                             {link.short_code}
                           </span>
-                          <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full flex items-center">
+                          <span className="text-xs bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 px-2 py-1 rounded-full flex items-center">
                             <FiEye className="w-3 h-3 mr-1" />
                             <CountUp end={link.clicks_count || 0} duration={1} /> clicks
                           </span>
-                          <span className="text-xs bg-cyan-100 text-cyan-700 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 px-2 py-1 rounded-full">
                             QR ready
                           </span>
                         </div>
                         
                         <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-sm text-gray-500 truncate max-w-md">
+                          <span className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-md">
                             {link.original_url}
                           </span>
                           <button
@@ -367,7 +352,6 @@ if (loading || isLoading) {
                     </motion.div>
 
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                       <Link
                         href={`/dashboard/links/new?edit=${link.id}`}
                         className="p-2 sm:p-3 hover:bg-white rounded-xl transition-all group relative"
@@ -375,7 +359,6 @@ if (loading || isLoading) {
                       >
                         <FiEdit2 className="w-5 h-5 text-gray-500 group-hover:text-yellow-600" />
                       </Link>
-                    </motion.div>
                     </motion.div>
 
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>

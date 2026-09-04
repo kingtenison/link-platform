@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/service'
 import { generateShortCode, validateUrl, ensureProtocol } from '@/utils/shortener'
 import { cookies } from 'next/headers'
-import { verifyToken } from '@/lib/auth'
+import { createServerClient } from '@supabase/ssr'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
@@ -15,31 +15,57 @@ export async function POST(request: Request) {
       maxClicks,
       scheduledAt,
       timezone,
+      monetize,
     } = await request.json()
 
     if (!validateUrl(url)) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
     }
 
+    if (password && password.length > 72) {
+      return NextResponse.json({ error: 'Password must be 72 characters or fewer' }, { status: 400 })
+    }
+
     // Authentication is optional: logged-in users own their links,
     // anonymous visitors can shorten instantly (user_id = null).
     let userId: string | null = null
     const cookieStore = await cookies()
-    const token = cookieStore.get('token')?.value
 
-    if (token) {
-      userId = await verifyToken(token)
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll() {},
+        },
+      }
+    )
+
+    const { data: { user } } = await supabaseAuth.auth.getUser()
+    if (user) {
+      userId = user.id
     }
 
     const cleanUrl = ensureProtocol(url)
     let shortCode = customAlias || generateShortCode()
 
     if (customAlias) {
+      if (!/^[a-zA-Z0-9]{3,60}$/.test(customAlias)) {
+        return NextResponse.json(
+          { error: 'Custom alias must be 3-60 characters using only letters and numbers' },
+          { status: 400 }
+        )
+      }
+      shortCode = customAlias
+
       const { data: existing } = await supabase
         .from('links')
         .select('short_code')
         .eq('short_code', customAlias)
-        .single()
+        .maybeSingle()
 
       if (existing) {
         return NextResponse.json(
@@ -75,6 +101,7 @@ export async function POST(request: Request) {
       clicks_count: 0,
       is_active: true,
       protection_type: protectionTypes,
+      monetize: monetize === false ? false : true,
     }
 
     if (password && password.trim() !== '') {
@@ -83,7 +110,11 @@ export async function POST(request: Request) {
     }
 
     if (expiresAt) {
-      insertData.expires_at = new Date(expiresAt).toISOString()
+      const expiry = new Date(expiresAt)
+      if (Number.isNaN(expiry.getTime())) {
+        return NextResponse.json({ error: 'Invalid expiry date' }, { status: 400 })
+      }
+      insertData.expires_at = expiry.toISOString()
       protectionTypes.push('expiration')
     }
 
@@ -93,7 +124,11 @@ export async function POST(request: Request) {
     }
 
     if (scheduledAt) {
-      insertData.scheduled_at = new Date(scheduledAt).toISOString()
+      const scheduled = new Date(scheduledAt)
+      if (Number.isNaN(scheduled.getTime())) {
+        return NextResponse.json({ error: 'Invalid schedule date' }, { status: 400 })
+      }
+      insertData.scheduled_at = scheduled.toISOString()
       insertData.timezone = timezone || 'UTC'
       protectionTypes.push('scheduled')
       insertData.is_active = false
@@ -106,7 +141,8 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('Shorten insert error:', error)
+      return NextResponse.json({ error: 'Failed to create link' }, { status: 500 })
     }
 
     return NextResponse.json({

@@ -5,7 +5,9 @@ import { FiSun, FiMoon } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 
 export default function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
-  const { theme, toggleTheme } = useTheme()
+  const { toggleTheme } = useTheme()
+
+  const iconClass = `w-5 h-5 ${onDark ? 'text-white/80' : 'text-gray-600 dark:text-gray-300'}`
 
   return (
     <motion.button
@@ -19,11 +21,12 @@ export default function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
       }`}
       aria-label="Toggle theme"
     >
-      {theme === 'light' ? (
-        <FiMoon className={`w-5 h-5 ${onDark ? 'text-white/80' : 'text-gray-600 dark:text-gray-300'}`} />
-      ) : (
-        <FiSun className={`w-5 h-5 ${onDark ? 'text-white/80' : 'text-gray-600 dark:text-gray-300'}`} />
-      )}
+      <span className="dark:hidden">
+        <FiMoon className={iconClass} />
+      </span>
+      <span className="hidden dark:inline">
+        <FiSun className={iconClass} />
+      </span>
     </motion.button>
   )
 }

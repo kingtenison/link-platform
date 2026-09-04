@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/contexts/ThemeContext'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { ApiLink, ApiClick } from '@/lib/api'
@@ -28,10 +29,12 @@ import {
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
+import PageTitle from '@/components/ui/PageTitle'
 
 // Create a separate component for the analytics content that uses useSearchParams
 function AnalyticsContent() {
   const { user, loading } = useAuth()
+  const { theme } = useTheme()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [links, setLinks] = useState<ApiLink[]>([])
@@ -134,6 +137,9 @@ function AnalyticsContent() {
   }
 
   const COLORS = ['#14B8A6', '#10B981', '#F59E0B', '#EF4444', '#0EA5E9']
+  const isDark = theme === 'dark'
+  const chartGridColor = isDark ? '#374151' : '#f0f0f0'
+  const chartTextColor = isDark ? '#D1D5DB' : '#374151'
 
   if (loading || isLoading) {
     return (
@@ -149,6 +155,7 @@ function AnalyticsContent() {
 
   return (
     <div className="dashboard-container">
+      <PageTitle title="Analytics" />
       <PageWrapper>
         <h1 className="sr-only">Analytics Dashboard</h1>
         {/* Header */}
@@ -214,56 +221,63 @@ function AnalyticsContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
         <AnimatedCard className="p-8">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
-              <FiMousePointer className="w-6 h-6 text-teal-600" />
+            <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/40 rounded-xl flex items-center justify-center">
+              <FiMousePointer className="w-6 h-6 text-teal-600 dark:text-teal-400" />
             </div>
-            <span className="text-2xl font-bold text-gray-800">
+            <span className="text-2xl font-bold text-gray-800 dark:text-white">
               <CountUp end={stats.totalClicks} duration={2} />
             </span>
           </div>
-          <p className="text-gray-600 text-sm">Total Clicks</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Total Clicks</p>
         </AnimatedCard>
 
         <AnimatedCard className="p-6">
           <div className="flex items-center justify-between mb-4">
-<div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center">
-              <FiEye className="w-6 h-6 text-cyan-700" />
+<div className="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/40 rounded-xl flex items-center justify-center">
+              <FiEye className="w-6 h-6 text-cyan-700 dark:text-cyan-400" />
             </div>
-            <span className="text-2xl font-bold text-gray-800">
+            <span className="text-2xl font-bold text-gray-800 dark:text-white">
               <CountUp end={stats.uniqueVisitors} duration={2} />
             </span>
           </div>
-          <p className="text-gray-600 text-sm">Unique Visitors</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Unique Visitors</p>
         </AnimatedCard>
 
         <AnimatedCard className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <FiTrendingUp className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center">
+              <FiTrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-2xl font-bold text-gray-800">
+            <span className="text-2xl font-bold text-gray-800 dark:text-white">
               <CountUp end={stats.avgClicksPerDay} duration={2} decimals={1} />
             </span>
           </div>
-          <p className="text-gray-600 text-sm">Avg Clicks/Day</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Clicks/Day</p>
         </AnimatedCard>
             </div>
 
       {/* Chart */}
       <AnimatedCard className="p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Traffic Overview</h2>
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Traffic Overview</h2>
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
             <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+              <XAxis dataKey="date" tick={{ fill: chartTextColor, fontSize: 12 }} />
+              <YAxis tick={{ fill: chartTextColor, fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                  border: `1px solid ${isDark ? '#374151' : '#E5E7EB'}`,
+                  borderRadius: '0.75rem',
+                  color: isDark ? '#F9FAFB' : '#111827',
+                }}
+              />
               <Bar dataKey="clicks" fill="#14B8A6" radius={[4, 4, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-[400px] flex items-center justify-center text-gray-500">
+          <div className="h-[400px] flex items-center justify-center text-gray-500 dark:text-gray-400">
             No click data available for this period
           </div>
         )}
@@ -272,7 +286,7 @@ function AnalyticsContent() {
       {/* Device Distribution */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <AnimatedCard className="p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Device Distribution</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Device Distribution</h2>
           {deviceData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -289,30 +303,44 @@ function AnalyticsContent() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                    border: `1px solid ${isDark ? '#374151' : '#E5E7EB'}`,
+                    borderRadius: '0.75rem',
+                    color: isDark ? '#F9FAFB' : '#111827',
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
+            <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
               No device data
             </div>
           )}
         </AnimatedCard>
 
         <AnimatedCard className="p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Top Countries</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Top Countries</h2>
           {locationData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={locationData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={100} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                <XAxis type="number" tick={{ fill: chartTextColor, fontSize: 12 }} />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fill: chartTextColor, fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                    border: `1px solid ${isDark ? '#374151' : '#E5E7EB'}`,
+                    borderRadius: '0.75rem',
+                    color: isDark ? '#F9FAFB' : '#111827',
+                  }}
+                />
                 <Bar dataKey="value" fill="#14B8A6" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
+            <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
               No location data
             </div>
           )}

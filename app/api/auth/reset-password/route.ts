@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { supabase } from '@/lib/supabase'
-import { hashPassword, verifyToken, comparePassword } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
   try {
@@ -21,57 +19,50 @@ export async function POST(request: Request) {
       )
     }
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get('token')?.value
+    if (!currentPassword) {
+      return NextResponse.json(
+        { error: 'Current password is required to change your password' },
+        { status: 400 }
+      )
+    }
 
-    if (!token) {
+    if (currentPassword === newPassword) {
+      return NextResponse.json(
+        { error: 'New password must be different from the current password' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = await createClient()
+
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser()
+
+    if (getUserError || !user) {
       return NextResponse.json(
         { error: 'Authentication required. Please log in first.' },
         { status: 401 }
       )
     }
 
-    const userId = await verifyToken(token)
-    if (!userId) {
+    // Verify current password by re-authenticating
+    const { error: reauthError } = await supabase.auth.signInWithPassword({
+      email: user.email!,
+      password: currentPassword,
+    })
+
+    if (reauthError) {
       return NextResponse.json(
-        { error: 'Invalid or expired session. Please log in again.' },
-        { status: 401 }
+        { error: 'Current password is incorrect' },
+        { status: 400 }
       )
     }
 
-    if (currentPassword) {
-      const { data: user, error: fetchError } = await supabase
-        .from('users')
-        .select('password_hash')
-        .eq('id', userId)
-        .single()
+    // Update password
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
 
-      if (fetchError || !user) {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        )
-      }
-
-      const isCurrentValid = await comparePassword(currentPassword, user.password_hash)
-      if (!isCurrentValid) {
-        return NextResponse.json(
-          { error: 'Current password is incorrect' },
-          { status: 400 }
-        )
-      }
-    }
-
-    const hashedPassword = await hashPassword(newPassword)
-
-    const { data, error } = await supabase
-      .from('users')
-      .update({ password_hash: hashedPassword })
-      .eq('id', userId)
-      .select('id, email')
-      .single()
-
-    if (error) {
+    if (updateError) {
       return NextResponse.json(
         { error: 'Failed to update password' },
         { status: 500 }
@@ -80,7 +71,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: 'Password updated successfully',
-      user: { id: data.id, email: data.email },
+      user: { id: user.id, email: user.email },
     })
   } catch {
     return NextResponse.json(

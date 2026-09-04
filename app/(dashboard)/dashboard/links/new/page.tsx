@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
 import type { ApiLink } from '@/lib/api'
 import toast from 'react-hot-toast'
+import PageTitle from '@/components/ui/PageTitle'
 
 function toLocalInputValue(iso: string): string {
   const d = new Date(iso)
@@ -152,6 +153,7 @@ function NewLinkContent() {
   if (created) {
     return (
       <div className="dashboard-container">
+        <PageTitle title="Link Created" />
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -223,6 +225,7 @@ function NewLinkContent() {
 
   return (
     <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+      <PageTitle title={editingId ? 'Edit Link' : 'Create Link'} />
       <Link href="/dashboard/links" className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-8 group">
         <FiArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
         Back to Links

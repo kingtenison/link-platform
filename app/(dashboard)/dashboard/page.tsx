@@ -16,10 +16,12 @@ import {
   FiEye,
   FiCopy
 } from 'react-icons/fi'
-import { motion, Variants } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { itemVariants } from '@/components/ui/animations'
 import CountUp from 'react-countup'
 import toast from 'react-hot-toast'
 import type { ApiLink } from '@/lib/api'
+import PageTitle from '@/components/ui/PageTitle'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -71,15 +73,6 @@ export default function DashboardPage() {
       setIsLoading(false)
     }
   }
-
-const itemVariants: Variants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1
-    }
-  }
-
   // Loading state
   if (loading || isLoading) {
     return (
@@ -105,7 +98,7 @@ const itemVariants: Variants = {
       icon: FiZap, 
       color: 'from-teal-500 to-cyan-600',
       description: 'Shorten a new URL',
-      bgImage: 'url("https://images.unsplash.com/photo-1611926653458-09294b3142bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
+      bgImage: 'url("https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
     },
     { 
       name: 'View All Links', 
@@ -113,7 +106,7 @@ const itemVariants: Variants = {
       icon: FiGrid, 
       color: 'from-amber-500 to-orange-600',
       description: 'Manage your links',
-      bgImage: 'url("https://images.unsplash.com/photo-1611926653458-09294b3142bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
+      bgImage: 'url("https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
     },
     { 
       name: 'QR Codes', 
@@ -121,15 +114,15 @@ const itemVariants: Variants = {
       icon: FiCode, 
       color: 'from-teal-500 to-cyan-600',
       description: 'Generate & download',
-      bgImage: 'url("https://images.unsplash.com/photo-1611926653458-09294b3142bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
+      bgImage: 'url("https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
     },
   ]
 
   const statBackgrounds = [
+    'url("https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")',
     'url("https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")',
-    'url("https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")',
-    'url("https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")',
-    'url("https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
+    'url("https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")',
+    'url("https://images.unsplash.com/photo-1563986768609-322da13575f2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")'
   ]
 
   const statCards = [
@@ -173,6 +166,7 @@ const itemVariants: Variants = {
 
 return (
     <>
+    <PageTitle title="Dashboard" />
 <div className="dashboard-container">
         <h1 className="sr-only">Dashboard</h1>
         <div className="space-y-12 sm:space-y-16 lg:space-y-20">
@@ -286,7 +280,7 @@ return (
                   </div>
 
                   {/* Animated particles */}
-                  <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
                     {[...Array(3)].map((_, i) => (
                       <motion.div
                         key={i}
@@ -339,7 +333,7 @@ return (
               <div className="relative overflow-hidden rounded-3xl">
                 <div 
                   className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80")' }}
+                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80")' }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-br from-teal-700/95 via-cyan-700/95 to-gray-900/95" />
                 

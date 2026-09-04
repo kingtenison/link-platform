@@ -1,10 +1,10 @@
 ﻿import { NextResponse } from 'next/server'
-import { createUser, getUserByEmail } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase/service'
 
 export async function POST(request: Request) {
   try {
     const { email, password, name } = await request.json()
-
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -20,36 +20,58 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if user exists
-    const existingUser = await getUserByEmail(email)
-    
-    if (existingUser) {
+    const authClient = await createClient()
+
+    const { data, error } = await authClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
+      },
+    })
+
+    if (error) {
       return NextResponse.json(
-        { error: 'Email already registered' },
+        { error: error.message },
         { status: 400 }
       )
     }
 
-    // Create user
-    const user = await createUser(email, password, name)
+    if (data.user) {
+      // Upsert into public.users for app-specific data
+      const { error: upsertError } = await supabase
+        .from('users')
+        .upsert(
+          {
+            id: data.user.id,
+            email: data.user.email!,
+            name,
+            plan_type: 'free',
+            total_links: 0,
+            total_clicks: 0,
+          },
+          { onConflict: 'id' }
+        )
+
+      if (upsertError) {
+        console.error('Failed to upsert public.users:', upsertError)
+      }
+    }
 
     return NextResponse.json({
       message: 'User created successfully',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name
-      }
+      user: data.user
+        ? {
+            id: data.user.id,
+            email: data.user.email,
+            name,
+          }
+        : null,
     })
   } catch (error) {
-    const err = error as { message?: string; code?: string; details?: string; hint?: string }
-    console.error('Register error details:', {
-      message: err.message,
-      code: err.code,
-      details: err.details,
-      hint: err.hint
-    })
-    
+    const err = error as { message?: string }
+    console.error('Register error:', err)
     return NextResponse.json(
       { error: err.message || 'Failed to create account' },
       { status: 500 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from './lib/auth'
+import { createServerClient } from '@supabase/ssr'
 
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
@@ -94,7 +94,7 @@ export async function proxy(request: NextRequest) {
   if (!checkRateLimit(ip, 200, 60_000)) {
     return NextResponse.json(
       { error: 'Too many requests. Please try again later.' },
-      { status: 429 }
+      { status: 429, headers: { 'Retry-After': '60' } }
     )
   }
 
@@ -106,7 +106,24 @@ export async function proxy(request: NextRequest) {
     if (!checkRateLimit(`auth:${ip}`, 10, 60_000)) {
       return NextResponse.json(
         { error: 'Too many authentication attempts. Please try again later.' },
-        { status: 429 }
+        { status: 429, headers: { 'Retry-After': '60' } }
+      )
+    }
+  }
+
+  // Password-protected short links submit via POST to /{shortCode}; slow down
+  // brute-force attempts per IP without affecting normal GET redirects.
+  if (
+    request.method === 'POST' &&
+    /^\/[^/]+$/.test(pathname) &&
+    !isPublicPath(pathname) &&
+    !pathname.startsWith('/api/')
+  ) {
+    const allowed = checkRateLimit(`pwl:${ip}`, 30, 60_000)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
       )
     }
   }
@@ -155,9 +172,35 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const token = request.cookies.get('token')?.value
+  // --- Supabase Auth session check ---
+  let supabaseResponse = NextResponse.next({ request })
 
-  if (!token) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
@@ -166,19 +209,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  const userId = await verifyToken(token)
-
-  if (!userId) {
-    const response = pathname.startsWith('/api/')
-      ? NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
-      : NextResponse.redirect(new URL('/login', request.url))
-
-    response.cookies.set('token', '', { maxAge: 0, path: '/' })
-    return response
-  }
-
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-user-id', userId)
+  requestHeaders.set('x-user-id', user.id)
 
   return NextResponse.next({
     request: { headers: requestHeaders },

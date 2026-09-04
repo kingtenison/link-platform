@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useState, Suspense, useLayoutEffect, useRef } from 'react'
+import { useEffect, useState, Suspense, useLayoutEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { ApiLink } from '@/lib/api'
 import Link from 'next/link'
@@ -17,10 +17,12 @@ import {
   FiDownloadCloud,
   FiEye,
   FiCode,
+  FiX,
   FiLink as FiLinkIcon
 } from 'react-icons/fi'
 import QRCode from 'react-qr-code'
 import toast from 'react-hot-toast'
+import PageTitle from '@/components/ui/PageTitle'
 
 function QRCodesContent() {
   const { user, loading } = useAuth()
@@ -57,6 +59,17 @@ function QRCodesContent() {
     ro.observe(previewBoxRef.current)
     return () => ro.disconnect()
   }, [showPreview])
+
+  const closePreview = useCallback(() => setShowPreview(false), [])
+
+  useEffect(() => {
+    if (!showPreview) return
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePreview()
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [showPreview, closePreview])
 
   const displayQrSize = qrBoxWidth > 0 ? Math.min(qrSize, Math.max(128, qrBoxWidth - 64)) : qrSize
   const previewQrSize = previewBoxWidth > 0 ? Math.min(400, Math.max(128, previewBoxWidth - 64)) : 400
@@ -174,6 +187,7 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
 
   return (
 <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 space-y-12 sm:space-y-16 lg:space-y-20">
+      <PageTitle title="QR Codes" />
       {/* Header with Navigation */}
       <div className="glass-card p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -210,8 +224,8 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
           <div className="w-24 h-24 mx-auto bg-gradient-to-br from-teal-400 to-cyan-500 rounded-3xl flex items-center justify-center mb-6">
             <FiCode className="w-12 h-12 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Links Yet</h2>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">No Links Yet</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
             Create your first shortened link to generate QR codes
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -286,12 +300,12 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
               </div>
 
               {/* Quick Stats */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between text-sm text-gray-600">
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                   <span>Total Links:</span>
                   <span className="font-semibold">{links.length}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600 mt-1">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
                   <span>Showing:</span>
                   <span className="font-semibold">{filteredLinks.length}</span>
                 </div>
@@ -305,10 +319,10 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
               <div className="glass-card p-6">
                 {/* Link Info */}
                 <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
                     QR Code for {selectedLink.short_code}
                   </h2>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
                     <FiLinkIcon className="w-4 h-4" />
                     <span className="truncate">{selectedLink.original_url}</span>
                   </div>
@@ -365,7 +379,7 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
                   
                   {/* Size Control */}
                   <div className="w-full max-w-xs mb-4">
-                    <label className="block text-sm text-gray-600 mb-2">
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                       QR Code Size: {qrSize}px
                     </label>
                     <input
@@ -424,11 +438,11 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
 <div className="flex justify-between items-center mb-4">
                         <h3 className="text-xl font-semibold">QR Code Preview</h3>
                         <button
-                          onClick={() => setShowPreview(false)}
+                          onClick={closePreview}
                           className="p-2 hover:bg-gray-100 rounded-lg"
                           aria-label="Close preview"
                         >
-                          ✕
+                          <FiX className="w-5 h-5" />
                         </button>
                       </div>
 <div ref={previewBoxRef} className="flex justify-center p-4 sm:p-8 bg-gray-50 rounded-xl">
@@ -458,16 +472,16 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
                 )}
 
                 {/* Stats Summary */}
-                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
+                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <div className="text-center">
-                    <div className="text-lg sm:text-2xl font-bold text-gray-800">{selectedLink.clicks_count}</div>
-                    <div className="text-sm text-gray-500">Total Clicks</div>
+                    <div className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-white">{selectedLink.clicks_count}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Total Clicks</div>
                   </div>
                   <div className="text-center">
-<div className="text-sm sm:text-2xl font-bold text-gray-800">
+<div className="text-sm sm:text-2xl font-bold text-gray-800 dark:text-white">
                       {new Date(selectedLink.created_at).toLocaleDateString()}
                     </div>
-                    <div className="text-sm text-gray-500">Created</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Created</div>
                   </div>
                   <div className="text-center">
                     <button
@@ -485,8 +499,8 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
                 <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
                   <FiGrid className="w-10 h-10 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">No Link Selected</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">No Link Selected</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   Select a link from the list to generate its QR code
                 </p>
               </div>

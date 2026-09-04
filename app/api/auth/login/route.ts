@@ -1,6 +1,5 @@
 ﻿import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getUserByEmail, comparePassword, createToken } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
   try {
@@ -13,43 +12,29 @@ export async function POST(request: Request) {
       )
     }
 
-    const user = await getUserByEmail(email)
-    
-    if (!user || !user.password_hash) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      )
-    }
+    const supabase = await createClient()
 
-    const isValid = await comparePassword(password, user.password_hash)
-
-    if (!isValid) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      )
-    }
-
-    const token = await createToken(user.id)
-
-    const cookieStore = await cookies()
-    cookieStore.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/'
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     })
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
+
+    const user = data.user
 
     return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
-      }
+        name: user.user_metadata?.name || null,
+      },
     })
-
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
