@@ -246,7 +246,7 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Links List Sidebar */}
           <div className="lg:col-span-1">
             <div className="glass-card p-4 sticky top-24">

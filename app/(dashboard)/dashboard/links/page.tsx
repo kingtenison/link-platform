@@ -131,7 +131,7 @@ if (loading || isLoading) {
   }
 
   return (
-    <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-16 sm:pt-20">
+      <div className="w-full px-6 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-12 sm:pt-16 lg:pt-20">
       <PageTitle title="My Links" />
       <motion.div
         variants={pageVariants}

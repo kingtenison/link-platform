@@ -169,10 +169,10 @@ return (
     <PageTitle title="Dashboard" />
 <div className="dashboard-container">
         <h1 className="sr-only">Dashboard</h1>
-        <div className="space-y-12 sm:space-y-16 lg:space-y-20">
+        <div className="space-y-8 sm:space-y-12 lg:space-y-16">
             {/* Welcome */}
-            <div className="pt-8 sm:pt-10">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <div className="pt-6 sm:pt-10">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
                 Welcome back, {user?.name?.split(' ')[0] || 'there'} 👋
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -183,12 +183,12 @@ return (
             {/* Quick Actions */}
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold tracking-tight">Quick Actions</h2>
+                <h2 className="text-lg sm:text-2xl font-semibold tracking-tight">Quick Actions</h2>
               </div>
 
               <motion.div 
                 variants={itemVariants}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10"
+                className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
               >
                 {quickActions.map((action) => (
                   <motion.div
@@ -200,7 +200,7 @@ return (
                   >
                     <Link
                       href={action.href}
-                      className="block relative overflow-hidden rounded-3xl h-48 sm:h-56 lg:h-64 xl:h-72 group"
+                      className="block relative overflow-hidden rounded-2xl sm:rounded-3xl h-36 sm:h-56 lg:h-64 xl:h-72 group"
                     >
                       <div 
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.08]"
@@ -208,17 +208,17 @@ return (
                       />
                       <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-90 group-hover:opacity-85 transition-opacity`} />
                       
-                      <div className="relative h-full p-8 lg:p-10 flex flex-col justify-between text-white">
+                      <div className="relative h-full p-5 sm:p-8 lg:p-10 flex flex-col justify-between text-white">
                         <div className="flex items-center justify-between">
-                          <div className="w-11 h-11 bg-white/25 backdrop-blur-md rounded-xl flex items-center justify-center">
-                            <action.icon className="w-5 h-5" />
+                          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-white/25 backdrop-blur-md rounded-xl flex items-center justify-center">
+                            <action.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                          <FiArrowRight className="w-5 h-5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                          <FiArrowRight className="w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                         
                         <div>
-                          <h3 className="text-[15px] sm:text-base font-semibold tracking-tight mb-1">{action.name}</h3>
-                          <p className="text-sm text-white/75 leading-snug">{action.description}</p>
+                          <h3 className="text-sm sm:text-base font-semibold tracking-tight mb-0.5 sm:mb-1">{action.name}</h3>
+                          <p className="text-xs sm:text-sm text-white/75 leading-snug">{action.description}</p>
                         </div>
                       </div>
                     </Link>
@@ -230,12 +230,12 @@ return (
             {/* Stats Overview */}
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold tracking-tight">Overview</h2>
+                <h2 className="text-lg sm:text-2xl font-semibold tracking-tight">Overview</h2>
               </div>
 
               <motion.div 
                 variants={itemVariants}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10"
+                className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
               >
               {statCards.map((stat) => (
                 <motion.div
@@ -253,10 +253,10 @@ return (
                   
                   <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-90 group-hover:opacity-80 transition-opacity`} />
                   
-                   <div className="relative p-8 lg:p-10 text-white">
-                     <div className="flex items-start justify-between mb-4">
-                       <div className="w-10 h-10 bg-white/25 backdrop-blur-md rounded-xl flex items-center justify-center">
-                         <stat.icon className="w-5 h-5" />
+                   <div className="relative p-5 sm:p-8 lg:p-10 text-white">
+                     <div className="flex items-start justify-between mb-3 sm:mb-4">
+                       <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/25 backdrop-blur-md rounded-xl flex items-center justify-center">
+                         <stat.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                        </div>
                        
                        <div className="hidden lg:flex items-center gap-1">
@@ -266,9 +266,9 @@ return (
                        </div>
                      </div>
 
-                     <div>
-                       <p className="text-sm text-white/70 mb-1">{stat.label}</p>
-                       <div className="text-3xl font-semibold tracking-tighter mb-1">
+                      <div>
+                        <p className="text-xs sm:text-sm text-white/70 mb-1">{stat.label}</p>
+                        <div className="text-2xl sm:text-3xl font-semibold tracking-tighter mb-1">
                          {typeof stat.value === 'number' ? (
                            <CountUp end={stat.value} duration={2} separator="," />
                          ) : (
@@ -322,7 +322,7 @@ return (
             {/* Recent Activity */}
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold tracking-tight">Recent Activity</h2>
+                <h2 className="text-lg sm:text-2xl font-semibold tracking-tight">Recent Activity</h2>
                 {recentLinks.length > 0 && (
                   <Link href="/dashboard/links" className="text-sm text-white/70 hover:text-white flex items-center gap-1 transition-colors">
                     View all <FiArrowRight className="w-4 h-4" />

@@ -218,7 +218,7 @@ function AnalyticsContent() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
         <AnimatedCard className="p-8">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/40 rounded-xl flex items-center justify-center">
@@ -284,7 +284,7 @@ function AnalyticsContent() {
       </AnimatedCard>
 
       {/* Device Distribution */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <AnimatedCard className="p-6">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Device Distribution</h2>
           {deviceData.length > 0 ? (
