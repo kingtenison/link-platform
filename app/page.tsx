@@ -332,8 +332,8 @@ export default function Home() {
       </div>
 
       {/* Hero Section */}
-      <section id="shortener" className="relative z-10 w-full pt-24 md:pt-28 lg:pt-32 xl:pt-36 pb-16 md:pb-20 lg:pb-24 xl:pb-28 scroll-mt-8">
-        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+      <section id="shortener" className="relative z-10 w-full pt-24 md:pt-28 lg:pt-32 xl:pt-36 pb-12 md:pb-20 lg:pb-24 xl:pb-28 scroll-mt-8">
+        <div className="w-full px-6 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -355,7 +355,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight"
+              className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-4 sm:mb-6 leading-tight"
             >
               <span className="text-white">Shorten Links.</span>
               <br />
@@ -368,7 +368,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-xl text-white/80 mb-12 max-w-2xl mx-auto"
+              className="text-base sm:text-xl text-white/80 mb-8 sm:mb-12 max-w-2xl mx-auto"
             >
               Paste a long link below and get a short one in seconds — no signup
               needed. Create a free account to track every click, protect links,
@@ -520,24 +520,24 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how" className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
-        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+      <section id="how" className="relative z-10 w-full py-12 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
+        <div className="w-full px-6 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4">
               Get started in three steps
             </h2>
-            <p className="text-xl text-white/60">
+            <p className="text-base sm:text-xl text-white/60">
               From long link to tracked link — in under a minute
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {steps.map((step, index) => (
               <motion.div
                 key={index}
@@ -546,16 +546,16 @@ export default function Home() {
                 transition={{ delay: index * 0.15 }}
                 viewport={{ once: true }}
                 whileHover={{ y: -5 }}
-                className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 text-left group"
+                className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 sm:p-8 text-left group"
               >
-                <span className="absolute top-5 right-6 text-5xl font-bold text-white/5 group-hover:text-white/10 transition-colors select-none">
+                <span className="absolute top-4 right-4 sm:top-5 sm:right-6 text-3xl sm:text-5xl font-bold text-white/5 group-hover:text-white/10 transition-colors select-none">
                   {step.n}
                 </span>
-                <div className="w-14 h-14 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform">
-                  <step.icon className="w-7 h-7 text-white" />
+                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                  <step.icon className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">{step.title}</h3>
-                <p className="text-white/60 leading-relaxed">{step.desc}</p>
+                <h3 className="text-base sm:text-xl font-bold text-white mb-2 sm:mb-3">{step.title}</h3>
+                <p className="text-white/60 leading-relaxed text-sm sm:text-base hidden sm:block">{step.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -563,24 +563,24 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
-        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+      <section id="features" className="relative z-10 w-full py-12 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
+        <div className="w-full px-6 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4">
               Everything you need in one platform
             </h2>
-            <p className="text-xl text-white/60">
+            <p className="text-base sm:text-xl text-white/60">
               Powerful features that help you share smarter and track better
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -589,15 +589,15 @@ export default function Home() {
                 transition={{ delay: feature.delay }}
                 viewport={{ once: true }}
                 whileHover={{ y: -5, scale: 1.02 }}
-                className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 hover:shadow-2xl hover:shadow-teal-500/10 transition-all group"
+                className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-5 sm:p-8 hover:shadow-2xl hover:shadow-teal-500/10 transition-all group"
               >
                 <div
-                  className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform`}
+                  className={`w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform`}
                 >
-                  <feature.icon className="w-7 h-7 text-white" />
+                  <feature.icon className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                <p className="text-white/60">{feature.desc}</p>
+                <h3 className="text-base sm:text-xl font-bold text-white mb-2 sm:mb-3">{feature.title}</h3>
+                <p className="text-white/60 text-sm sm:text-base hidden sm:block">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -605,19 +605,19 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
-        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+      <section id="faq" className="relative z-10 w-full py-12 md:py-20 lg:py-24 xl:py-28 scroll-mt-24">
+        <div className="w-full px-6 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-white/60">
+            <p className="text-base sm:text-xl text-white/60">
               Quick answers about LinkPlatform
             </p>
           </motion.div>
@@ -627,7 +627,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             viewport={{ once: true }}
-            className="max-w-3xl mx-auto bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-8"
+            className="max-w-3xl mx-auto bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 sm:px-8"
           >
             {FAQ.map((item, i) => (
               <FAQItem key={i} q={item.q} a={item.a} />
@@ -638,13 +638,13 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="relative z-10 w-full py-16 md:py-20 lg:py-24 xl:py-28">
-        <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+        <div className="w-full px-6 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-r from-teal-700 via-cyan-800 to-teal-900 rounded-3xl p-12 lg:p-16 text-center relative overflow-hidden"
+            className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 sm:p-12 lg:p-16 text-center relative overflow-hidden"
           >
             <div className="absolute inset-0">
               <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
@@ -656,7 +656,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-4xl md:text-5xl font-bold text-white mb-4"
+                className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4"
               >
                 Ready to get started?
               </motion.h2>
@@ -664,7 +664,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-xl text-white/80 mb-8"
+                className="text-base sm:text-xl text-white/80 mb-6 sm:mb-8"
               >
                 Create your free account and start shortening links in seconds.
               </motion.p>
@@ -672,12 +672,12 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center"
+                className="flex gap-3 sm:gap-4 justify-center"
               >
                 {user ? (
                   <Link
                     href="/dashboard"
-                    className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold hover:shadow-2xl hover:shadow-white/20 transition-all flex items-center justify-center group"
+                    className="bg-white text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:shadow-2xl hover:shadow-white/20 transition-all flex items-center justify-center group text-sm sm:text-base"
                   >
                     Go to Dashboard
                   </Link>
@@ -685,13 +685,13 @@ export default function Home() {
                   <>
                     <Link
                       href="/register"
-                      className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold hover:shadow-2xl hover:shadow-white/20 transition-all flex items-center justify-center group"
+                      className="bg-white text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:shadow-2xl hover:shadow-white/20 transition-all flex items-center justify-center group text-sm sm:text-base"
                     >
                       Create Free Account
                     </Link>
                     <button
                       onClick={scrollToShortener}
-                      className="bg-white/15 backdrop-blur-sm border border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/25 transition-all flex items-center justify-center group"
+                      className="bg-white/15 backdrop-blur-sm border border-white/30 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:bg-white/25 transition-all flex items-center justify-center group text-sm sm:text-base"
                     >
                       Shorten a link now
                     </button>
