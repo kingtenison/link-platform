@@ -1,5 +1,4 @@
 ﻿import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 
 export interface User {
   id: string
@@ -10,7 +9,6 @@ export interface User {
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
 
   const fetchUser = useCallback(async () => {
     try {
@@ -28,40 +26,6 @@ export function useAuth() {
     fetchUser()
   }, [fetchUser])
 
-  async function login(email: string, password: string) {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-
-    const data = await res.json()
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Login failed')
-    }
-
-    setUser(data.user)
-    router.push('/dashboard')
-    router.refresh()
-  }
-
-  async function register(email: string, password: string, name: string) {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
-    })
-
-    const data = await res.json()
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Registration failed')
-    }
-
-    return data
-  }
-
   async function logout() {
     try {
       await fetch('/api/auth/logout', {
@@ -76,5 +40,5 @@ export function useAuth() {
     }
   }
 
-  return { user, loading, login, register, logout }
+  return { user, loading, logout }
 }

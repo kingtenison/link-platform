@@ -48,8 +48,6 @@ const PUBLIC_PATHS = [
   '/robots.txt',
   '/llms.txt',
   '/favicon.ico',
-  '/api/auth/login',
-  '/api/auth/register',
   '/api/auth/logout',
   '/api/auth/me',
   '/api/links/shorten',
@@ -98,17 +96,9 @@ export async function proxy(request: NextRequest) {
     )
   }
 
-  if (
-    pathname.startsWith('/api/auth/login') ||
-    pathname.startsWith('/api/auth/register') ||
-    pathname.startsWith('/api/auth/reset-password')
-  ) {
-    if (!checkRateLimit(`auth:${ip}`, 10, 60_000)) {
-      return NextResponse.json(
-        { error: 'Too many authentication attempts. Please try again later.' },
-        { status: 429, headers: { 'Retry-After': '60' } }
-      )
-    }
+  // Google OAuth callback — let Supabase handle it
+  if (pathname.startsWith('/api/auth/')) {
+    return NextResponse.next()
   }
 
   // Password-protected short links submit via POST to /{shortCode}; slow down
