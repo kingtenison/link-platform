@@ -168,7 +168,7 @@ function AnalyticsContent() {
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Analytics Dashboard</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">Analytics Dashboard</h1>
               <p className="text-white/90 text-lg">
                 Track your link performance with real-time data
               </p>

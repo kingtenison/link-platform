@@ -224,9 +224,9 @@ function NewLinkContent() {
   }
 
   return (
-    <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24">
+    <div className="dashboard-container">
       <PageTitle title={editingId ? 'Edit Link' : 'Create Link'} />
-      <Link href="/dashboard/links" className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-8 group">
+      <Link href="/dashboard/links" className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-6 sm:mb-8 group text-sm sm:text-base">
         <FiArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
         Back to Links
       </Link>
@@ -234,9 +234,9 @@ function NewLinkContent() {
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="glass-card p-8"
+        className="glass-card p-5 sm:p-8"
       >
-        <h1 className="text-3xl font-bold gradient-text mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-2">
           {editingId ? 'Edit Link' : 'Create Protected Link'}
         </h1>
         <p className="text-gray-600 mb-6">

@@ -131,7 +131,7 @@ if (loading || isLoading) {
   }
 
   return (
-      <div className="w-full px-6 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 pt-12 sm:pt-16 lg:pt-20">
+      <div className="dashboard-container pt-12 sm:pt-16 lg:pt-20">
       <PageTitle title="My Links" />
       <motion.div
         variants={pageVariants}
@@ -149,7 +149,7 @@ if (loading || isLoading) {
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold mb-2">My Links</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">My Links</h1>
               <p className="text-white/90 text-lg">
                 Manage and track all your shortened links
               </p>
@@ -163,28 +163,28 @@ if (loading || isLoading) {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-white/80 text-sm mb-1">Total Links</p>
-              <p className="text-3xl font-bold">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 sm:p-4">
+              <p className="text-white/80 text-xs sm:text-sm mb-1">Total Links</p>
+              <p className="text-xl sm:text-3xl font-bold">
                 <CountUp end={links.length} duration={2} />
               </p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-white/80 text-sm mb-1">Total Clicks</p>
-              <p className="text-3xl font-bold">
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 sm:p-4">
+              <p className="text-white/80 text-xs sm:text-sm mb-1">Total Clicks</p>
+              <p className="text-xl sm:text-3xl font-bold">
                 <CountUp end={totalClicks} duration={2} />
               </p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-white/80 text-sm mb-1">Avg Clicks/Link</p>
-              <p className="text-3xl font-bold">
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 sm:p-4">
+              <p className="text-white/80 text-xs sm:text-sm mb-1">Avg Clicks/Link</p>
+              <p className="text-xl sm:text-3xl font-bold">
                 <CountUp end={Number(averageClicks)} duration={2} decimals={1} />
               </p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-white/80 text-sm mb-1">Top Link</p>
-              <p className="text-3xl font-bold">
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 sm:p-4">
+              <p className="text-white/80 text-xs sm:text-sm mb-1">Top Link</p>
+              <p className="text-xl sm:text-3xl font-bold">
                 <CountUp end={topLink} duration={2} />
               </p>
             </div>

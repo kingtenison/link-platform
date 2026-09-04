@@ -186,33 +186,33 @@ img.src = 'data:image/svg+xml,' + encodeURIComponent(svgData)
   }
 
   return (
-<div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 space-y-12 sm:space-y-16 lg:space-y-20">
+<div className="dashboard-container space-y-8 sm:space-y-12 lg:space-y-16">
       <PageTitle title="QR Codes" />
       {/* Header with Navigation */}
       <div className="glass-card p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold gradient-text">QR Code Generator</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold gradient-text">QR Code Generator</h1>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
               Generate beautiful QR codes for your shortened links
             </p>
           </div>
           
           {/* Navigation Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link
               href="/dashboard"
-              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600"
+              className="white-btn-outline !bg-transparent !text-gray-800 !border-gray-300 dark:!text-white dark:!border-gray-600 !px-3 sm:!px-4 !py-2 text-sm"
             >
-              <FiArrowLeft className="w-4 h-4 mr-2" />
-              Dashboard
+              <FiArrowLeft className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Dashboard</span>
             </Link>
             <Link
               href="/dashboard/links/new"
-              className="white-btn"
+              className="white-btn !px-3 sm:!px-4 !py-2 text-sm"
             >
-              <FiLinkIcon className="w-4 h-4 mr-2" />
-              New Link
+              <FiLinkIcon className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">New Link</span>
             </Link>
           </div>
         </div>

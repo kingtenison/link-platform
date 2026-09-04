@@ -293,54 +293,83 @@ export default function MergedHeader({ variant = 'site' }: MergedHeaderProps) {
           >
             <nav aria-label="Mobile" className="px-6 py-4 space-y-1">
               {isDashboard
-                ? NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                ? (
+                  <>
                     <Link
-                      key={href}
-                      href={href}
-                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-colors ${navItemClass(href)}`}
+                      href="/dashboard/links/new"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg shadow-teal-500/25 mb-3"
                     >
-                      <Icon className="w-4 h-4" />
-                      {label}
+                      <FiZap className="w-4 h-4" />
+                      Create New Link
                     </Link>
-                  ))
-                : siteNav.map(({ href, label }) => (
-                    <a
-                      key={href}
-                      href={href}
-                      className="block px-3.5 py-2.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-                    >
-                      {label}
-                    </a>
-                  ))}
-
-              {!isDashboard && (
-                <div className="pt-3 mt-3 border-t border-white/10 space-y-1.5">
-                  {!loading && !user ? (
-                    <>
+                    {NAV_LINKS.map(({ href, label, icon: Icon }) => (
                       <Link
-                        href="/login"
-                        className="block text-center px-4 py-2.5 rounded-lg text-sm font-medium text-white/80 hover:text-white border border-white/15 transition-colors"
+                        key={href}
+                        href={href}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-colors ${navItemClass(href)}`}
                       >
-                        Login
+                        <Icon className="w-4 h-4" />
+                        {label}
                       </Link>
-                      <Link
-                        href="/register"
-                        className="block text-center px-4 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-gray-900 transition-all"
+                    ))}
+                    <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        onClick={logout}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                       >
-                        Get Started
-                      </Link>
-                    </>
-                  ) : !loading && user ? (
-                    <button
-                      onClick={logout}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-red-300 hover:bg-white/10 transition-colors"
-                    >
-                      <FiLogOut className="w-4 h-4" />
-                      Sign Out
-                    </button>
-                  ) : null}
-                </div>
-              )}
+                        <FiLogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </>
+                )
+                : (
+                  <>
+                    {siteNav.map(({ href, label }) => (
+                      <a
+                        key={href}
+                        href={href}
+                        className="block px-3.5 py-2.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                      >
+                        {label}
+                      </a>
+                    ))}
+                    <div className="pt-3 mt-3 border-t border-white/10 space-y-1.5">
+                      {!loading && !user ? (
+                        <>
+                          <Link
+                            href="/login"
+                            className="block text-center px-4 py-2.5 rounded-lg text-sm font-medium text-white/80 hover:text-white border border-white/15 transition-colors"
+                          >
+                            Login
+                          </Link>
+                          <Link
+                            href="/register"
+                            className="block text-center px-4 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-gray-900 transition-all"
+                          >
+                            Get Started
+                          </Link>
+                        </>
+                      ) : !loading && user ? (
+                        <>
+                          <Link
+                            href="/dashboard"
+                            className="block text-center px-4 py-2.5 rounded-lg text-sm font-medium text-white/80 hover:text-white border border-white/15 transition-colors"
+                          >
+                            Dashboard
+                          </Link>
+                          <button
+                            onClick={logout}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-red-300 hover:bg-white/10 transition-colors"
+                          >
+                            <FiLogOut className="w-4 h-4" />
+                            Sign Out
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </>
+                )}
             </nav>
           </motion.div>
         )}
