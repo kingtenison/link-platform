@@ -218,41 +218,41 @@ function AnalyticsContent() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
-        <AnimatedCard className="p-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/40 rounded-xl flex items-center justify-center">
-              <FiMousePointer className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+        <AnimatedCard className="p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 bg-teal-100 dark:bg-teal-900/40 rounded-xl flex items-center justify-center">
+              <FiMousePointer className="w-4 h-4 sm:w-6 sm:h-6 text-teal-600 dark:text-teal-400" />
             </div>
-            <span className="text-2xl font-bold text-gray-800 dark:text-white">
+            <span className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
               <CountUp end={stats.totalClicks} duration={2} />
             </span>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Total Clicks</p>
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Total Clicks</p>
         </AnimatedCard>
 
-        <AnimatedCard className="p-6">
-          <div className="flex items-center justify-between mb-4">
-<div className="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/40 rounded-xl flex items-center justify-center">
-              <FiEye className="w-6 h-6 text-cyan-700 dark:text-cyan-400" />
+        <AnimatedCard className="p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 bg-cyan-100 dark:bg-cyan-900/40 rounded-xl flex items-center justify-center">
+              <FiEye className="w-4 h-4 sm:w-6 sm:h-6 text-cyan-700 dark:text-cyan-400" />
             </div>
-            <span className="text-2xl font-bold text-gray-800 dark:text-white">
+            <span className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
               <CountUp end={stats.uniqueVisitors} duration={2} />
             </span>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Unique Visitors</p>
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Unique Visitors</p>
         </AnimatedCard>
 
-        <AnimatedCard className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center">
-              <FiTrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
+        <AnimatedCard className="p-4 sm:p-6 col-span-2 md:col-span-1">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center">
+              <FiTrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-2xl font-bold text-gray-800 dark:text-white">
+            <span className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
               <CountUp end={stats.avgClicksPerDay} duration={2} decimals={1} />
             </span>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Clicks/Day</p>
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Avg Clicks/Day</p>
         </AnimatedCard>
             </div>
 
